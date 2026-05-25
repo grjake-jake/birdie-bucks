@@ -860,41 +860,85 @@ function renderScorecard(){
   const {net,holeWon,honWon,log}=calcFull();
   const played=log.filter(e=>!e.skipped);
   if(!played.length){ document.getElementById('scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>'; return; }
+
+  // Build table: names left, holes across, total strokes + net money columns on right
   let html='<div class="sc-wrap"><table class="sc-tbl"><thead><tr><th class="name-col">name</th>';
   played.forEach((e,ci)=>{ html+='<th class="'+(ci%2===0?'col-a':'col-b')+'">H'+(e.h+1)+'</th>'; });
+  html+='<th style="background:var(--blue);color:#fff">strokes</th>';
+  html+='<th style="background:var(--green);color:#fff">money</th>';
   html+='</tr></thead><tbody>';
+
+  // Par row
   html+='<tr><td class="name-cell" style="font-size:15px;font-weight:800;color:var(--blue)">par</td>';
   played.forEach((e,ci)=>{ html+='<td class="par-cell '+(ci%2===0?'col-a':'col-b')+'">'+e.par+'</td>'; });
+  html+='<td class="par-cell">'+played.reduce((sum,e)=>sum+(e.par||4),0)+'</td>';
+  html+='<td class="par-cell"></td>';
   html+='</tr>';
+
+  // Player rows with running stroke totals
   dp.forEach((p,pi)=>{
     html+='<tr><td class="name-cell">'+escH(p)+'</td>';
+    let strokeTotal=0;
     played.forEach((e,ci)=>{
       const colCls=ci%2===0?'col-a':'col-b';
       const sc=e.scores[pi], isWin=!e.isTie&&e.holeWinner===pi;
       const holdsHonors=e.honorsHolder===pi;
       const isEdited=G.editedCells&&G.editedCells[e.h+'_'+pi];
+      strokeTotal+=Number(sc)||0;
       html+='<td class="'+colCls+(isWin?' winner-score':'')+(isEdited?' edited-score':'')+'">'+sc+(holdsHonors?'<sup>H</sup>':'')+(isEdited?'<sup style="color:var(--yellow)">✏</sup>':'')+'</td>';
     });
+    // Stroke total column
+    html+='<td style="background:var(--blue-light);font-size:20px;font-weight:900;color:var(--blue)">'+strokeTotal+'</td>';
+    // Net money column
+    const playerNet=net[pi];
+    const pos=playerNet>=0;
+    html+='<td style="font-size:18px;font-weight:900;color:'+(pos?'var(--green)':'var(--red)')+';">'+(pos&&playerNet>0?'+':'')+fmt(playerNet)+'</td>';
     html+='</tr>';
   });
+
+  // Result row
   html+='<tr class="result-row"><td class="name-cell" style="font-size:14px;font-weight:800;color:var(--text3)">result</td>';
   played.forEach((e,ci)=>{
     const colCls=ci%2===0?'col-a':'col-b';
     let cell=e.isTie?'<span style="color:var(--text3);font-size:16px;font-weight:900">T</span>':'<span style="color:var(--green);font-size:15px;font-weight:900">'+initials(dp[e.holeWinner])+fmt(e.finalPot)+'</span>';
     html+='<td class="result-cell '+colCls+'">'+cell+'</td>';
   });
+  html+='<td class="result-cell"></td><td class="result-cell"></td>';
   html+='</tr></tbody></table></div>';
-  html+='<div class="totals-section"><div style="font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:6px;">totals</div>';
-  dp.forEach((p,i)=>{
-    const hw=holeWon[i], hv=honWon[i], grand=hw+hv;
-    html+='<div class="total-row-item"><div class="total-name">'+escH(p)+'</div><div class="total-detail">';
-    if(hw>0) html+='<div class="total-hole-won">⛳ holes: +'+fmt(hw)+'</div>';
-    if(hv>0) html+='<div class="total-hon-won">🏅 honors: +'+fmt(hv)+'</div>';
-    html+='<div class="total-grand">'+(grand>0?'+'+fmt(grand):'$0')+'</div>';
-    html+='</div></div>';
-  });
+
+  // Who owes who section
+  const debts=[];
+  const bal=net.map((v,i)=>({i,v}));
+  const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
+  const neg2=bal.filter(x=>x.v<-0.005).sort((a,b)=>a.v-b.v);
+  let pi2=0,ni=0;
+  while(pi2<pos2.length&&ni<neg2.length){
+    const amt=Math.min(pos2[pi2].v,-neg2[ni].v);
+    debts.push({from:neg2[ni].i,to:pos2[pi2].i,amt});
+    pos2[pi2].v-=amt; neg2[ni].v+=amt;
+    if(Math.abs(pos2[pi2].v)<0.005)pi2++;
+    if(Math.abs(neg2[ni].v)<0.005)ni++;
+  }
+  html+='<div class="totals-section"><div style="font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:6px;">current standings</div>';
   html+='</div>';
-  document.getElementById('scorecard-content').innerHTML=html;
+  const scEl=document.getElementById('scorecard-content');
+  scEl.innerHTML=html;
+  // Add debts using DOM to avoid quote issues
+  const totalsEl=scEl.querySelector('.totals-section');
+  if(!debts.length){
+    const allSq=document.createElement('div');
+    allSq.style.cssText='text-align:center;color:var(--green);font-size:18px;font-weight:800;padding:10px 0';
+    allSq.textContent='all square!';
+    totalsEl.appendChild(allSq);
+  } else {
+    debts.forEach(d=>{
+      const row=document.createElement('div');
+      row.className='owes-row';
+      row.style.marginBottom='8px';
+      row.innerHTML='<span style="color:var(--red);font-size:18px;font-weight:800">'+escH(dp[d.from])+' owes '+escH(dp[d.to])+'</span><span style="font-size:24px;font-weight:900;color:var(--red)">'+fmt(d.amt)+'</span>';
+      totalsEl.appendChild(row);
+    });
+  }
 }
 
 // ── RESULTS ──────────────────────────────────────────────────────────────────
@@ -1570,4 +1614,3 @@ purgeOldGames();
 </div>
 </body>
 </html>
-
