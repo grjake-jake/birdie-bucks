@@ -96,10 +96,11 @@ select.inp{color:var(--text);}
 .sc-close{font-size:30px;cursor:pointer;color:var(--text2);padding:4px 10px;font-weight:900;}
 .sc-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px;}
 .sc-tbl{border-collapse:collapse;min-width:100%;}
-.sc-tbl th{background:var(--green);color:#fff;padding:10px 8px;text-align:center;font-size:16px;font-weight:900;border:2px solid var(--border2);white-space:nowrap;}
+.sc-tbl th{background:var(--green);color:#fff;padding:8px 6px;text-align:center;font-size:15px;font-weight:900;border:2px solid var(--border2);white-space:nowrap;}
 .sc-tbl th.name-col{text-align:left;padding-left:10px;min-width:70px;background:var(--blue);color:#fff;}
-.sc-tbl td{padding:10px 8px;text-align:center;border:2px solid var(--border);font-size:20px;font-weight:800;}
-.sc-tbl td.name-cell{text-align:left;padding-left:10px;font-size:18px;color:var(--text);font-weight:900;white-space:nowrap;background:var(--blue-light);}
+.sc-tbl td{padding:8px 5px;text-align:center;border:2px solid var(--border);font-size:18px;font-weight:800;}
+.sc-tbl td.name-cell{text-align:left;padding-left:10px;font-size:18px;color:var(--text);font-weight:900;white-space:nowrap;background:var(--blue-light);position:sticky;left:0;z-index:2;}
+.sc-tbl th.name-col{position:sticky;left:0;z-index:3;}
 .sc-tbl td.par-cell{font-size:16px;color:var(--blue);font-weight:800;background:var(--blue-light);}
 .sc-tbl td.result-cell{font-size:16px;font-weight:900;}
 .sc-tbl .col-a{background:var(--col-a);}
@@ -810,7 +811,32 @@ function highlightWinners(){
 function renderHoleResult(){
   const h=G.currentHole, s=G.scores[h], dp=getDisplayPlayers();
   const rd=document.getElementById('hole-result');
-  if(!s||!s.every(v=>!isMissing(v))){ rd.innerHTML=''; return; }
+  if(!s){ rd.innerHTML=''; return; }
+
+  // Pick-up alert: if some scores entered and a winner is already determined
+  const entered=s.map((v,i)=>isMissing(v)?null:Number(v));
+  const enteredVals=entered.filter(v=>v!==null);
+  const notEntered=entered.filter(v=>v===null);
+  if(enteredVals.length>0 && notEntered.length>0){
+    const curMin=Math.min(...enteredVals);
+    // Can anyone who hasn't entered beat or tie the current low?
+    // In skins they need to BEAT it (tie = carryover which is still interesting)
+    // Show pick-up alert only if remaining players can't win
+    const par=G.pars[h]||4;
+    // minimum possible score for remaining = 1 (ace)
+    // so only show pick-up if current low is 1 (nobody can beat an ace)
+    if(curMin===1){
+      rd.innerHTML='<div style="background:var(--red-light);border:3px solid var(--red);border-radius:var(--radius);padding:12px;font-size:20px;font-weight:900;color:var(--red);text-align:center;margin-top:8px">🚨 ACE! Everyone pick up!</div>';
+      return;
+    }
+    // Show who currently leads
+    const leadIdx=entered.indexOf(curMin);
+    if(leadIdx>=0){
+      rd.innerHTML='<div style="background:var(--gold-light);border:2px solid var(--gold);border-radius:var(--radius);padding:10px;font-size:18px;font-weight:800;color:var(--gold);margin-top:8px">⚠️ '+escH(dp[leadIdx])+' leads with a '+curMin+' — need to beat it to win</div>';
+    }
+  }
+
+  if(!s.every(v=>!isMissing(v))) return;
   const {pot,honorsHolder}=stateAtHole(h);
   const nums=s.map(Number), min=Math.min(...nums);
   const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
@@ -882,9 +908,12 @@ function renderScorecard(){
   const dp=getDisplayPlayers(), n=dp.length;
   const {net,holeWon,honWon,log}=calcFull();
   const played=log.filter(e=>!e.skipped);
-  if(!played.length){ document.getElementById('scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>'; return; }
+  if(!played.length){
+    document.getElementById('scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>';
+    return;
+  }
 
-  // Header with course name and date/time - use past game meta if viewing history
+  // Header
   let headerCourseName='', headerDate='';
   if(G._pastGameMeta){
     headerCourseName=G._pastGameMeta.courseName||'';
@@ -900,52 +929,80 @@ function renderScorecard(){
   if(headerCourseName) html+='<div style="font-size:18px;font-weight:900;color:var(--green);margin-bottom:4px">⛳ '+escH(headerCourseName)+'</div>';
   html+='<div style="font-size:14px;color:var(--text2);font-weight:700;margin-bottom:12px">📅 '+headerDate+'</div>';
 
-  // Build table: names left, holes across, total strokes + net money columns on right
-  html+='<div class="sc-wrap"><table class="sc-tbl"><thead><tr><th class="name-col">name</th>';
-  played.forEach((e,ci)=>{ html+='<th class="'+(ci%2===0?'col-a':'col-b')+'">H'+(e.h+1)+'</th>'; });
-  html+='<th style="background:var(--blue);color:#fff">strokes</th>';
-  html+='<th style="background:var(--green);color:#fff">money</th>';
+  // Track running money per player
+  const running=Array(n).fill(0);
+
+  // Build table
+  html+='<div class="sc-wrap"><table class="sc-tbl"><thead><tr>';
+  html+='<th class="name-col">hole</th>';
+  dp.forEach(p=>{ html+='<th>'+escH(p)+'</th>'; });
   html+='</tr></thead><tbody>';
 
   // Par row
-  html+='<tr><td class="name-cell" style="font-size:15px;font-weight:800;color:var(--blue)">par</td>';
-  played.forEach((e,ci)=>{ html+='<td class="par-cell '+(ci%2===0?'col-a':'col-b')+'">'+e.par+'</td>'; });
-  html+='<td class="par-cell">'+played.reduce((sum,e)=>sum+(e.par||4),0)+'</td>';
-  html+='<td class="par-cell"></td>';
+  html+='<tr><td class="name-cell" style="font-size:14px;color:var(--blue);font-weight:800">par</td>';
+  dp.forEach(()=>{ html+='<td class="par-cell"></td>'; });
   html+='</tr>';
 
-  // Player rows with running stroke totals
-  dp.forEach((p,pi)=>{
-    html+='<tr><td class="name-cell">'+escH(p)+'</td>';
-    let strokeTotal=0;
-    played.forEach((e,ci)=>{
-      const colCls=ci%2===0?'col-a':'col-b';
-      const sc=e.scores[pi], isWin=!e.isTie&&e.holeWinner===pi;
+  played.forEach((e,ci)=>{
+    const colCls=ci%2===0?'col-a':'col-b';
+    const par=e.par||4;
+
+    // Score row
+    html+='<tr>';
+    html+='<td class="name-cell '+colCls+'" style="font-size:14px;font-weight:800">H'+(e.h+1)+'<br><span style="font-size:12px;color:var(--blue)">par '+par+'</span></td>';
+    dp.forEach((p,pi)=>{
+      const sc=e.scores[pi];
+      const isWin=!e.isTie&&e.holeWinner===pi;
       const holdsHonors=e.honorsHolder===pi;
       const isEdited=G.editedCells&&G.editedCells[e.h+'_'+pi];
-      strokeTotal+=Number(sc)||0;
-      html+='<td class="'+colCls+(isWin?' winner-score':'')+(isEdited?' edited-score':'')+'">'+sc+(holdsHonors?'<sup>H</sup>':'')+(isEdited?'<sup style="color:var(--yellow)">✏</sup>':'')+'</td>';
+      const diff=Number(sc)-par;
+      let scoreLabel='';
+      if(sc==1) scoreLabel='<br><span style="font-size:10px;color:var(--gold)">ACE</span>';
+      else if(diff<=-2) scoreLabel='<br><span style="font-size:10px;color:var(--gold)">EAGLE</span>';
+      else if(diff===-1) scoreLabel='<br><span style="font-size:10px;color:var(--green)">BIRDIE</span>';
+      else if(diff===1) scoreLabel='<br><span style="font-size:10px;color:var(--text3)">bogey</span>';
+      html+='<td class="'+colCls+(isWin?' winner-score':'')+(isEdited?' edited-score':'')+'">'+sc+scoreLabel+(holdsHonors?'<sup>H</sup>':'')+'</td>';
     });
-    // Stroke total column
-    html+='<td style="background:var(--blue-light);font-size:20px;font-weight:900;color:var(--blue)">'+strokeTotal+'</td>';
-    // Net money column
-    const playerNet=net[pi];
-    const pos=playerNet>=0;
-    html+='<td style="font-size:18px;font-weight:900;color:'+(pos?'var(--green)':'var(--red)')+';">'+(pos&&playerNet>0?'+':'')+fmt(playerNet)+'</td>';
+    html+='</tr>';
+
+    // Money row for this hole
+    html+='<tr style="background:var(--bg3)">';
+    html+='<td class="name-cell" style="font-size:12px;color:var(--text3);font-weight:700;padding:4px 6px">💰 result</td>';
+    dp.forEach((p,pi)=>{
+      // Calculate what this player gained/lost this hole
+      let holeDelta=0, honDelta=0;
+      if(!e.isTie&&e.holeWinner===pi) holeDelta=e.finalPot*(n-1);
+      else if(!e.isTie&&e.holeWinner!==-1) holeDelta=-e.finalPot;
+      if(e.honorsHolder>=0&&e.honorsHolder===pi) honDelta=G.hon*(n-1);
+      else if(e.honorsHolder>=0&&e.honorsHolder!==pi) honDelta=-G.hon;
+      const total=holeDelta+honDelta;
+      running[pi]+=total;
+      const pos=total>0, neg=total<0;
+      let moneyStr='—';
+      let parts=[];
+      if(holeDelta!==0) parts.push((holeDelta>0?'+':'')+fmt(holeDelta));
+      if(honDelta!==0&&G.hon>0) parts.push((honDelta>0?'🏅+':'🏅')+fmt(honDelta));
+      if(parts.length) moneyStr=parts.join(' ');
+      html+='<td style="font-size:13px;font-weight:800;padding:4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+'">'+moneyStr+'</td>';
+    });
+    html+='</tr>';
+
+    // Running total row
+    html+='<tr>';
+    html+='<td class="name-cell" style="font-size:12px;color:var(--text3);font-weight:700;padding:4px 6px">running</td>';
+    dp.forEach((p,pi)=>{
+      const pos=running[pi]>0, neg=running[pi]<0;
+      html+='<td style="font-size:14px;font-weight:900;padding:4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+';">'+(pos?'+':'')+fmt(running[pi])+'</td>';
+    });
     html+='</tr>';
   });
 
-  // Result row
-  html+='<tr class="result-row"><td class="name-cell" style="font-size:14px;font-weight:800;color:var(--text3)">result</td>';
-  played.forEach((e,ci)=>{
-    const colCls=ci%2===0?'col-a':'col-b';
-    let cell=e.isTie?'<span style="color:var(--text3);font-size:16px;font-weight:900">T</span>':'<span style="color:var(--green);font-size:15px;font-weight:900">'+initials(dp[e.holeWinner])+fmt(e.finalPot)+'</span>';
-    html+='<td class="result-cell '+colCls+'">'+cell+'</td>';
-  });
-  html+='<td class="result-cell"></td><td class="result-cell"></td>';
-  html+='</tr></tbody></table></div>';
+  html+='</tbody></table></div>';
 
-  // Who owes who section
+  // Who owes who - clear and simple
+  const scEl=document.getElementById('scorecard-content');
+  scEl.innerHTML=html;
+
   const debts=[];
   const bal=net.map((v,i)=>({i,v}));
   const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
@@ -958,27 +1015,38 @@ function renderScorecard(){
     if(Math.abs(pos2[pi2].v)<0.005)pi2++;
     if(Math.abs(neg2[ni].v)<0.005)ni++;
   }
-  html+='<div class="totals-section"><div style="font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:6px;">current standings</div>';
-  html+='</div>';
-  const scEl=document.getElementById('scorecard-content');
-  scEl.innerHTML=html;
-  // Add debts using DOM to avoid quote issues
-  const totalsEl=scEl.querySelector('.totals-section');
+
+  const standingsDiv=document.createElement('div');
+  standingsDiv.className='totals-section';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:6px;';
+  hdr.textContent='settle up';
+  standingsDiv.appendChild(hdr);
+
   if(!debts.length){
-    const allSq=document.createElement('div');
-    allSq.style.cssText='text-align:center;color:var(--green);font-size:18px;font-weight:800;padding:10px 0';
-    allSq.textContent='all square!';
-    totalsEl.appendChild(allSq);
+    const sq=document.createElement('div');
+    sq.style.cssText='text-align:center;color:var(--green);font-size:20px;font-weight:900;padding:12px 0';
+    sq.textContent='all square!';
+    standingsDiv.appendChild(sq);
   } else {
     debts.forEach(d=>{
       const row=document.createElement('div');
       row.className='owes-row';
       row.style.marginBottom='8px';
-      row.innerHTML='<span style="color:var(--red);font-size:18px;font-weight:800">'+escH(dp[d.from])+' owes '+escH(dp[d.to])+'</span><span style="font-size:24px;font-weight:900;color:var(--red)">'+fmt(d.amt)+'</span>';
-      totalsEl.appendChild(row);
+      const nameSpan=document.createElement('span');
+      nameSpan.style.cssText='color:var(--red);font-size:18px;font-weight:900';
+      nameSpan.textContent=dp[d.from]+' pays '+dp[d.to];
+      const amtSpan=document.createElement('span');
+      amtSpan.style.cssText='font-size:26px;font-weight:900;color:var(--red)';
+      amtSpan.textContent=fmt(d.amt);
+      row.appendChild(nameSpan);
+      row.appendChild(amtSpan);
+      standingsDiv.appendChild(row);
     });
   }
+  scEl.appendChild(standingsDiv);
 }
+
 
 // ── RESULTS ──────────────────────────────────────────────────────────────────
 window.showResults=function(){ buildResults('results','net-grid','payouts'); showScreen('results'); };
