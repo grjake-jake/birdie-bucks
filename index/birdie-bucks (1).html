@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Birdie Bucks">
+<title>Birdie Bucks</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1a6b3c;--green-light:#e8f5ee;--green-mid:#4a9e6b;
+  --gold:#b8860b;--gold-light:#fdf6dc;
+  --red:#c0392b;--red-light:#fdecea;
+  --gray:#f1efe8;
+  --bg:#ffffff;--bg2:#f7f7f5;--bg3:#f0ede8;
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --radius:8px;--radius-lg:12px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1a1a1a;--bg2:#242424;--bg3:#2e2e2e;
+    --text:#f0f0f0;--text2:#aaa;--text3:#666;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.2);
+    --green-light:#0d3320;--gold-light:#3a2a00;--red-light:#3a0f0f;--gray:#2a2a2a;
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+.screen{display:none;padding:12px;max-width:420px;margin:0 auto;}
+.screen.active{display:block;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.app-title{font-size:18px;font-weight:700;color:var(--green);letter-spacing:-0.5px;}
+.app-sub{font-size:11px;color:var(--text3);}
+.card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px;}
+.field-label{font-size:11px;color:var(--text2);letter-spacing:.4px;text-transform:uppercase;display:block;margin-bottom:6px;margin-top:10px;}
+.field-label:first-child{margin-top:0;}
+.chip-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:4px;}
+.chip{padding:6px 11px;border:0.5px solid var(--border2);border-radius:20px;font-size:13px;color:var(--text2);cursor:pointer;background:var(--bg);-webkit-tap-highlight-color:transparent;}
+.chip.on{border-color:var(--green);background:var(--green-light);color:var(--green);font-weight:600;}
+.inp{width:100%;padding:9px 10px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:6px;-webkit-appearance:none;}
+.inp:focus{outline:none;border-color:var(--green);}
+.btn{display:block;width:100%;padding:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;text-align:center;margin-bottom:8px;-webkit-tap-highlight-color:transparent;}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
+.btn.outline{border-color:var(--green);color:var(--green);background:transparent;}
+.btn.sm{font-size:12px;padding:7px 13px;width:auto;display:inline-block;margin-bottom:0;}
+.btn.danger{border-color:var(--red);color:var(--red);background:transparent;}
+.room-code{font-size:40px;font-weight:800;letter-spacing:10px;color:var(--green);text-align:center;padding:16px 0;font-family:'Courier New',monospace;}
+.hole-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.nav-btn{padding:8px 16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:13px;cursor:pointer;font-weight:500;-webkit-tap-highlight-color:transparent;}
+.nav-btn:disabled{opacity:0.3;cursor:default;}
+.prog-bar{height:3px;background:var(--bg3);border-radius:2px;margin-bottom:10px;}
+.prog-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s;}
+.badge{font-size:11px;padding:3px 8px;border-radius:10px;display:inline-block;font-weight:500;}
+.badge.pot{background:var(--gold-light);color:var(--gold);}
+.badge.green{background:var(--green-light);color:var(--green);}
+.badge.gray{background:var(--gray);color:#5f5e5a;}
+.badge.red{background:var(--red-light);color:var(--red);}
+.score-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+.score-block label{font-size:12px;color:var(--text2);display:block;margin-bottom:3px;}
+.score-block input{width:100%;padding:10px 6px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:22px;text-align:center;font-weight:600;-webkit-appearance:none;}
+.score-block input:focus{outline:none;border-color:var(--green);}
+.score-block input.winner{border-color:var(--green);background:var(--green-light);}
+.honors-bar{background:var(--gold-light);border:0.5px solid #e6c96a;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--gold);margin-bottom:8px;font-weight:500;}
+.live-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;}
+.live-row:last-child{border-bottom:none;}
+.live-name{color:var(--text2);}
+.live-score{font-size:20px;font-weight:700;color:var(--text);}
+.live-score.winning{color:var(--green);}
+.net-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px;}
+.net-card{border-radius:var(--radius);padding:12px;}
+.net-card.pos{background:var(--green-light);}
+.net-card.neg{background:var(--red-light);}
+.owes-row{background:var(--red-light);border-radius:var(--radius);padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
+.section-hd{font-size:11px;font-weight:600;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;margin:12px 0 6px;}
+.result-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:13px;}
+.result-line:last-child{border-bottom:none;}
+.par-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px;}
+.par-cell label{font-size:11px;color:var(--text2);display:block;margin-bottom:2px;text-align:center;}
+.par-cell input{width:100%;padding:6px 4px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);font-size:16px;text-align:center;-webkit-appearance:none;}
+.course-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:0.5px solid var(--border);}
+.course-row:last-child{border-bottom:none;}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:5px;vertical-align:middle;}
+.status-dot.live{background:var(--green);}
+.hole-info{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+.divider{text-align:center;margin:4px 0 8px;font-size:12px;color:var(--text3);}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="top-bar">
+    <div><div class="app-title">⛳ Birdie Bucks</div><div class="app-sub">golf money tracker</div></div>
+    <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
+  </div>
+  <div class="card">
+    <span class="field-label">mode</span>
+    <div class="chip-row">
+      <div class="chip on" id="mode-singles" onclick="setMode('singles')">singles</div>
+      <div class="chip" id="mode-scramble" onclick="setMode('scramble')">2v2 scramble</div>
+    </div>
+    <span class="field-label">course</span>
+    <select class="inp" id="course-select" onchange="onCourseChange()"><option value="">-- select course --</option></select>
+    <span class="field-label">holes</span>
+    <div class="chip-row" id="hole-chips">
+      <div class="chip on" onclick="setHoles(9,this)">9</div>
+      <div class="chip" onclick="setHoles(18,this)">18</div>
+    </div>
+    <span class="field-label">hole bet</span>
+    <div class="chip-row" id="bet-chips">
+      <div class="chip" onclick="setBet(0.25,this)">$0.25</div>
+      <div class="chip" onclick="setBet(0.50,this)">$0.50</div>
+      <div class="chip" onclick="setBet(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setBet(1,this)">$1</div>
+      <div class="chip" onclick="setBet(2,this)">$2</div>
+      <div class="chip" onclick="setBet(5,this)">$5</div>
+      <div class="chip" onclick="setBet(10,this)">$10</div>
+    </div>
+    <span class="field-label">honors bet</span>
+    <div class="chip-row" id="hon-chips">
+      <div class="chip" onclick="setHon(0,this)">off</div>
+      <div class="chip" onclick="setHon(0.25,this)">$0.25</div>
+      <div class="chip" onclick="setHon(0.50,this)">$0.50</div>
+      <div class="chip" onclick="setHon(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setHon(1,this)">$1</div>
+      <div class="chip" onclick="setHon(2,this)">$2</div>
+    </div>
+  </div>
+  <div class="card">
+    <span class="field-label" id="players-label">players</span>
+    <div id="players-inputs"></div>
+    <div id="scramble-section" style="display:none"></div>
+  </div>
+  <button class="btn primary" onclick="hostGame()">start game &amp; get room code →</button>
+  <div class="divider">— or —</div>
+  <button class="btn outline" onclick="showScreen('join')">join existing game</button>
+</div>
+
+<!-- JOIN -->
+<div id="join" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('home')">← back</button>
+    <div style="font-size:16px;font-weight:700;color:var(--green)">join game</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="card">
+    <span class="field-label">your name</span>
+    <input class="inp" id="join-name" placeholder="Enter your name">
+    <span class="field-label">room code</span>
+    <input class="inp" id="join-code" placeholder="AB12" maxlength="4" style="text-transform:uppercase;font-size:26px;letter-spacing:6px;text-align:center;">
+  </div>
+  <button class="btn primary" onclick="joinGame()">join →</button>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen">
+  <div class="top-bar">
+    <button class="btn sm danger" onclick="cancelGame()">cancel</button>
+    <div style="font-size:15px;font-weight:700;color:var(--green)">waiting for players</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="card" style="text-align:center">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:4px">share this room code</div>
+    <div class="room-code" id="lobby-code">----</div>
+    <div style="font-size:12px;color:var(--text2)">others tap "join existing game" and enter this code</div>
+  </div>
+  <div class="card">
+    <span class="field-label">players in game</span>
+    <div id="lobby-players"></div>
+  </div>
+  <button class="btn primary" onclick="startRound()">everyone's in — start round →</button>
+</div>
+
+<!-- SCORING -->
+<div id="scoring" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+    <div style="font-size:14px;font-weight:700;color:var(--green)">⛳ Birdie Bucks</div>
+    <div style="font-size:12px;color:var(--text2)"><span class="status-dot live"></span>live · <span id="scoring-room-code" style="font-family:'Courier New',monospace;font-weight:700"></span></div>
+  </div>
+  <div class="hole-nav">
+    <button class="nav-btn" id="prev-btn" onclick="prevHole()" disabled>← prev</button>
+    <span id="hole-nav-label" style="font-size:15px;font-weight:600;color:var(--text)">hole 1</span>
+    <button class="nav-btn" id="next-btn" onclick="nextHole()">next →</button>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:5%"></div></div>
+  <div id="honors-bar" class="honors-bar" style="display:none"></div>
+  <div class="card">
+    <div class="hole-info">
+      <span style="font-size:16px;font-weight:600" id="hole-display">hole 1</span>
+      <span class="badge pot" id="pot-badge">pot $1</span>
+      <span class="badge gray" id="par-badge">par 4</span>
+      <span class="badge red" id="double-badge" style="display:none">2×</span>
+    </div>
+    <div class="score-grid" id="score-inputs"></div>
+    <div id="hole-result"></div>
+  </div>
+  <div class="card" style="padding:10px 14px;margin-bottom:8px">
+    <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">live scores this hole</div>
+    <div id="live-scores-display"></div>
+  </div>
+  <button class="btn primary" onclick="finishRound()">see results →</button>
+</div>
+
+<!-- RESULTS -->
+<div id="results" class="screen">
+  <div class="top-bar">
+    <div class="app-title">final results</div>
+    <button class="btn sm primary" onclick="showScreen('home')">new game</button>
+  </div>
+  <div id="net-grid" class="net-grid"></div>
+  <div class="section-hd">who owes what</div>
+  <div id="payouts"></div>
+  <div class="section-hd">hole by hole</div>
+  <div class="card" style="padding:4px 14px" id="hole-log"></div>
+</div>
+
+<!-- COURSES -->
+<div id="courses" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('home')">← back</button>
+    <div style="font-size:16px;font-weight:700;color:var(--green)">my courses</div>
+    <button class="btn sm primary" onclick="showAddCourse()">+ add</button>
+  </div>
+  <div id="course-list"></div>
+  <div id="add-course-form" style="display:none">
+    <div class="card">
+      <span class="field-label">course name</span>
+      <input class="inp" id="new-course-name" placeholder="e.g. Lake Arrowhead Pines">
+      <span class="field-label">holes</span>
+      <div class="chip-row" id="new-holes-chips">
+        <div class="chip on" onclick="setNewHoles(9,this)">9</div>
+        <div class="chip" onclick="setNewHoles(18,this)">18</div>
+      </div>
+      <span class="field-label">par per hole</span>
+      <div class="par-grid" id="new-par-grid"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" onclick="cancelAddCourse()">cancel</button>
+        <button class="btn sm primary" onclick="saveCourse()">save course</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyClbLKWaDCclXdEcafQJ1Wu6EK66IauIk8",
+  authDomain: "birdie-bucks.firebaseapp.com",
+  databaseURL: "https://birdie-bucks-default-rtdb.firebaseio.com",
+  projectId: "birdie-bucks",
+  storageBucket: "birdie-bucks.firebasestorage.app",
+  messagingSenderId: "159812860840",
+  appId: "1:159812860840:web:d5e1d9f3bcedec10d3bb9d"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let G = {
+  mode:'singles', holes:9, bet:1, hon:1,
+  players:['','','',''],
+  teams:[{name:'',members:[0,1]},{name:'',members:[2,3]}],
+  scores:[], pars:[], currentHole:0,
+  roomCode:null, isHost:false, myName:null, myIdx:null,
+  liveListener:null
+};
+let newCourseHoles = 9;
+
+window.showScreen = function(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='home') refreshHome();
+  if(id==='courses') refreshCourseList();
+};
+
+function getCourses(){ try{ return JSON.parse(localStorage.getItem('bb_courses')||'[]'); }catch(e){ return []; } }
+function saveCourses(arr){ try{ localStorage.setItem('bb_courses',JSON.stringify(arr)); }catch(e){} }
+function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(n){ return n%1===0?'$'+n:'$'+parseFloat(n).toFixed(2); }
+function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+
+window.setMode = function(m){
+  G.mode=m;
+  document.getElementById('mode-singles').classList.toggle('on',m==='singles');
+  document.getElementById('mode-scramble').classList.toggle('on',m==='scramble');
+  renderPlayersInputs();
+};
+window.setHoles = function(n,el){ G.holes=n; G.pars=Array(n).fill(4); document.querySelectorAll('#hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setBet = function(n,el){ G.bet=n; document.querySelectorAll('#bet-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setHon = function(n,el){ G.hon=n; document.querySelectorAll('#hon-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+
+window.onCourseChange = function(){
+  const idx=document.getElementById('course-select').value;
+  if(idx==='') return;
+  const c=getCourses()[parseInt(idx)];
+  G.holes=c.holes; G.pars=[...c.pars];
+  document.querySelectorAll('#hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
+};
+
+function refreshHome(){
+  const sel=document.getElementById('course-select');
+  const courses=getCourses();
+  sel.innerHTML='<option value="">-- select course --</option>';
+  courses.forEach((c,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=c.name+(c.holes===18?' (18)':' (9)'); sel.appendChild(o); });
+  renderPlayersInputs();
+}
+
+function renderPlayersInputs(){
+  const pi=document.getElementById('players-inputs');
+  const ss=document.getElementById('scramble-section');
+  window._sp=(i,v)=>{ G.players[i]=v; };
+  if(G.mode==='singles'){
+    ss.style.display='none';
+    pi.innerHTML='';
+    for(let i=0;i<4;i++){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:8px;margin-bottom:6px;';
+      row.innerHTML='<input class="inp" style="margin:0;flex:1" placeholder="Player '+(i+1)+'" value="'+escH(G.players[i]||'')+'" oninput="window._sp('+i+',this.value)">';
+      pi.appendChild(row);
+    }
+  } else {
+    pi.innerHTML='';
+    ss.style.display='block';
+    for(let i=0;i<4;i++){
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:8px;margin-bottom:6px;';
+      row.innerHTML='<input class="inp" style="margin:0;flex:1" placeholder="Player '+(i+1)+'" value="'+escH(G.players[i]||'')+'" oninput="window._sp('+i+',this.value)">';
+      pi.appendChild(row);
+    }
+    ss.innerHTML='<div class="field-label" style="margin-top:8px">team names &amp; assignments</div>';
+    [0,1].forEach(t=>{
+      const tn=document.createElement('input');
+      tn.className='inp'; tn.placeholder='Team '+(t+1)+' name'; tn.value=escH(G.teams[t].name||'');
+      tn.oninput=()=>G.teams[t].name=tn.value;
+      ss.appendChild(tn);
+      const ar=document.createElement('div');
+      ar.style.cssText='display:flex;gap:6px;margin-bottom:6px;align-items:center;';
+      ar.innerHTML='<span style="font-size:12px;color:var(--green);font-weight:600;min-width:52px">team '+(t+1)+'</span>';
+      [0,1].forEach(m=>{
+        const sel=document.createElement('select');
+        sel.className='inp'; sel.style.cssText='flex:1;margin:0;font-size:13px;padding:6px;';
+        G.players.forEach((p,pi)=>{ const o=document.createElement('option'); o.value=pi; o.textContent=p||'Player '+(pi+1); if(G.teams[t].members[m]==pi) o.selected=true; sel.appendChild(o); });
+        sel.onchange=()=>{ G.teams[t].members[m]=parseInt(sel.value); };
+        ar.appendChild(sel);
+      });
+      ss.appendChild(ar);
+    });
+  }
+}
+
+function getDisplayPlayers(){
+  if(G.mode==='scramble') return G.teams.map(t=>t.name||'Team');
+  return G.players.filter(p=>p&&p.trim()).map((p,i)=>p||'P'+(i+1));
+}
+
+window.hostGame = async function(){
+  const dp=getDisplayPlayers();
+  if(dp.length<2){ alert('Enter at least 2 player names'); return; }
+  if(!G.pars||G.pars.length!==G.holes) G.pars=Array(G.holes).fill(4);
+  G.scores=Array(G.holes).fill(null).map(()=>Array(dp.length).fill(''));
+  G.currentHole=0; G.isHost=true; G.roomCode=genCode(); G.myIdx=0;
+  await set(ref(db,'games/'+G.roomCode),{
+    players:dp, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon,
+    mode:G.mode, scores:G.scores, currentHole:0, status:'lobby', created:Date.now()
+  });
+  document.getElementById('lobby-code').textContent=G.roomCode;
+  onValue(ref(db,'games/'+G.roomCode+'/players'),snap=>{
+    const players=snap.val()||[];
+    const el=document.getElementById('lobby-players');
+    if(el) el.innerHTML=players.map(p=>'<div class="live-row"><span class="live-name">'+escH(p)+'</span><span style="color:var(--green);font-size:12px">✓</span></div>').join('');
+  });
+  showScreen('lobby');
+};
+
+window.joinGame = async function(){
+  const name=document.getElementById('join-name').value.trim();
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(!name||!code){ alert('Enter your name and room code'); return; }
+  const snap=await get(ref(db,'games/'+code));
+  if(!snap.exists()){ alert('Room not found. Check the code.'); return; }
+  const game=snap.val();
+  G.roomCode=code; G.isHost=false; G.myName=name;
+  G.holes=game.holes; G.pars=game.pars; G.bet=game.bet; G.hon=game.hon; G.mode=game.mode;
+  G.scores=game.scores||Array(G.holes).fill(null).map(()=>Array((game.players||[]).length).fill(''));
+  G.currentHole=game.currentHole||0;
+  G.myIdx=(game.players||[]).findIndex(p=>p===name); if(G.myIdx===-1) G.myIdx=0;
+  document.getElementById('scoring-room-code').textContent=code;
+  listenScoring();
+  showScreen('scoring');
+  renderHole();
+};
+
+window.startRound = function(){
+  update(ref(db,'games/'+G.roomCode),{status:'active'});
+  document.getElementById('scoring-room-code').textContent=G.roomCode;
+  listenScoring();
+  showScreen('scoring');
+  renderHole();
+};
+
+function listenScoring(){
+  if(G.liveListener) G.liveListener();
+  G.liveListener=onValue(ref(db,'games/'+G.roomCode+'/scores'),snap=>{
+    const scores=snap.val();
+    if(scores) G.scores=scores;
+    renderLiveScores();
+    renderHoleResult();
+    highlightWinners();
+  });
+}
+
+window.cancelGame = function(){
+  if(G.roomCode) set(ref(db,'games/'+G.roomCode),null);
+  showScreen('home');
+};
+
+function stateAtHole(h){
+  let pot=G.bet, hh=-1;
+  for(let i=0;i<h;i++){
+    const s=G.scores[i];
+    if(!s||!s.every(v=>v!==''&&v!==null&&!isNaN(v))){pot+=G.bet;continue;}
+    const nums=s.map(Number);
+    const min=Math.min(...nums);
+    const winners=nums.reduce((a,v,j)=>{ if(v===min)a.push(j); return a; },[]);
+    const isTie=winners.length>1;
+    const par=G.pars[i]||4;
+    const isBirdie=!isTie&&min<=(par-1);
+    if(!isTie){ if(isBirdie) pot*=2; pot=G.bet; } else pot+=G.bet;
+    if(hh===-1){ if(!isTie) hh=winners[0]; }
+    else { if(min<nums[hh]&&!isTie) hh=winners[0]; }
+  }
+  return {pot,honorsHolder:hh};
+}
+
+function renderHole(){
+  const h=G.currentHole;
+  const dp=getDisplayPlayers();
+  const {pot,honorsHolder}=stateAtHole(h);
+  const par=G.pars[h]||4;
+  document.getElementById('hole-nav-label').textContent='hole '+(h+1);
+  document.getElementById('hole-display').textContent='hole '+(h+1);
+  document.getElementById('pot-badge').textContent='pot '+fmt(pot);
+  document.getElementById('par-badge').textContent='par '+par;
+  document.getElementById('prog-fill').style.width=Math.round(((h+1)/G.holes)*100)+'%';
+  document.getElementById('prev-btn').disabled=h===0;
+  document.getElementById('next-btn').disabled=h===G.holes-1;
+  document.getElementById('double-badge').style.display=pot>G.bet?'':'none';
+  const hBar=document.getElementById('honors-bar');
+  if(G.hon>0){
+    hBar.style.display='';
+    hBar.textContent=honorsHolder===-1?'🏅 honors: win a hole first to start':'🏅 honors: '+escH(dp[honorsHolder])+' ('+fmt(G.hon)+'/hole)';
+  } else hBar.style.display='none';
+  const si=document.getElementById('score-inputs');
+  si.innerHTML='';
+  dp.forEach((p,i)=>{
+    const div=document.createElement('div'); div.className='score-block';
+    const val=G.scores[h]&&G.scores[h][i]!==''&&G.scores[h][i]!==null?G.scores[h][i]:'';
+    div.innerHTML='<label>'+escH(p)+'</label><input type="number" min="1" max="15" inputmode="numeric" value="'+val+'" oninput="window._sc('+h+','+i+',this.value)">';
+    si.appendChild(div);
+  });
+  renderHoleResult();
+  highlightWinners();
+  renderLiveScores();
+}
+
+window._sc = async function(h,i,v){
+  if(!G.scores[h]) G.scores[h]=Array(getDisplayPlayers().length).fill('');
+  G.scores[h][i]=v===''?'':parseInt(v);
+  await update(ref(db,'games/'+G.roomCode),{scores:G.scores});
+  renderHoleResult();
+  highlightWinners();
+};
+
+function highlightWinners(){
+  const h=G.currentHole;
+  const s=G.scores[h];
+  if(!s) return;
+  const filled=s.every(v=>v!==''&&v!==null&&!isNaN(v));
+  const inputs=document.querySelectorAll('#score-inputs input');
+  inputs.forEach(inp=>inp.classList.remove('winner'));
+  if(!filled) return;
+  const nums=s.map(Number);
+  const min=Math.min(...nums);
+  const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
+  if(winners.length===1&&inputs[winners[0]]) inputs[winners[0]].classList.add('winner');
+}
+
+function renderHoleResult(){
+  const h=G.currentHole;
+  const s=G.scores[h];
+  const dp=getDisplayPlayers();
+  const rd=document.getElementById('hole-result');
+  if(!s||!s.every(v=>v!==''&&v!==null&&!isNaN(v))){rd.innerHTML='';return;}
+  const {pot,honorsHolder}=stateAtHole(h);
+  const nums=s.map(Number);
+  const min=Math.min(...nums);
+  const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
+  const isTie=winners.length>1;
+  const par=G.pars[h]||4;
+  const isBirdie=!isTie&&min<=(par-1);
+  const finalPot=isBirdie?pot*2:pot;
+  let html='';
+  if(isTie) html+='<span class="badge gray">tie — '+fmt(G.bet)+' carries over</span>';
+  else html+='<span class="badge green">🏆 '+escH(dp[winners[0]])+' wins '+fmt(finalPot)+(isBirdie?' 🐦':'')+'</span>';
+  if(G.hon>0){
+    let newHH=honorsHolder;
+    if(honorsHolder===-1){if(!isTie)newHH=winners[0];}
+    else{if(min<nums[honorsHolder]&&!isTie)newHH=winners[0];}
+    if(honorsHolder>=0) html+=' <span class="badge" style="background:var(--gold-light);color:var(--gold)">🏅 '+escH(dp[honorsHolder])+' '+fmt(G.hon)+'</span>';
+    else if(newHH>=0&&!isTie) html+=' <span class="badge" style="background:var(--gold-light);color:var(--gold)">🏅 '+escH(dp[newHH])+' earns honors</span>';
+  }
+  rd.innerHTML='<div style="margin-top:6px">'+html+'</div>';
+}
+
+function renderLiveScores(){
+  const h=G.currentHole;
+  const s=G.scores[h];
+  const dp=getDisplayPlayers();
+  const el=document.getElementById('live-scores-display');
+  if(!el) return;
+  if(!s){el.innerHTML='<div style="color:var(--text2);font-size:12px">waiting for scores...</div>';return;}
+  const nums=s.map(v=>v===''||v===null?null:Number(v));
+  const entered=nums.filter(v=>v!==null);
+  const min=entered.length?Math.min(...entered):null;
+  el.innerHTML=dp.map((p,i)=>{
+    const sc=nums[i];
+    const isWin=sc!==null&&sc===min&&entered.filter(v=>v===min).length===1;
+    return '<div class="live-row"><span class="live-name">'+escH(p)+'</span><span class="live-score'+(isWin?' winning':'')+'\">'+(sc!==null?sc:'—')+'</span></div>';
+  }).join('');
+}
+
+window.prevHole=function(){if(G.currentHole>0){G.currentHole--;update(ref(db,'games/'+G.roomCode),{currentHole:G.currentHole});renderHole();}};
+window.nextHole=function(){if(G.currentHole<G.holes-1){G.currentHole++;update(ref(db,'games/'+G.roomCode),{currentHole:G.currentHole});renderHole();}};
+window.finishRound=function(){showScreen('results');computeResults();};
+
+function computeResults(){
+  const dp=getDisplayPlayers();
+  const net=Array(dp.length).fill(0);
+  const log=[];
+  let pot=G.bet, hh=-1;
+  for(let h=0;h<G.holes;h++){
+    const s=G.scores[h];
+    const filled=s&&s.every(v=>v!==''&&v!==null&&!isNaN(v));
+    if(!filled){pot+=G.bet;log.push({h,skipped:true,pot});continue;}
+    const nums=s.map(Number);
+    const min=Math.min(...nums);
+    const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
+    const isTie=winners.length>1;
+    const par=G.pars[h]||4;
+    const isBirdie=!isTie&&min<=(par-1);
+    let finalPot=isBirdie?pot*2:pot;
+    const entry={h,pot,finalPot,isTie,isBirdie,holeWinner:isTie?-1:winners[0],honorsHolder:hh,honorsPaid:-1};
+    if(!isTie){
+      const w=winners[0];
+      dp.forEach((_,i)=>{ if(i!==w) net[i]-=finalPot/(dp.length-1); });
+      net[w]+=finalPot;
+      pot=G.bet;
+    } else pot+=G.bet;
+    let newHH=hh;
+    if(hh===-1){if(!isTie)newHH=winners[0];}
+    else{
+      if(G.hon>0){net[hh]+=G.hon;dp.forEach((_,i)=>{if(i!==hh)net[i]-=G.hon/(dp.length-1);});entry.honorsPaid=hh;}
+      if(min<nums[hh]&&!isTie)newHH=winners[0];
+    }
+    hh=newHH;
+    log.push(entry);
+  }
+  const ng=document.getElementById('net-grid');
+  ng.innerHTML='';
+  dp.forEach((p,i)=>{
+    const pos=net[i]>=0;
+    const div=document.createElement('div'); div.className='net-card '+(pos?'pos':'neg');
+    div.innerHTML='<div style="font-size:12px;color:'+(pos?'var(--green)':'var(--red)')+'">'+escH(p)+'</div><div style="font-size:24px;font-weight:700;color:'+(pos?'var(--green)':'var(--red)')+'\">'+(pos?'+':'')+fmt(Math.abs(net[i]))+'</div>';
+    ng.appendChild(div);
+  });
+  const debts=[];
+  const bal=net.map((v,i)=>({i,v}));
+  const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
+  const neg2=bal.filter(x=>x.v<-0.005).sort((a,b)=>a.v-b.v);
+  let pi=0,ni=0;
+  while(pi<pos2.length&&ni<neg2.length){
+    const amt=Math.min(pos2[pi].v,-neg2[ni].v);
+    debts.push({from:neg2[ni].i,to:pos2[pi].i,amt});
+    pos2[pi].v-=amt;neg2[ni].v+=amt;
+    if(Math.abs(pos2[pi].v)<0.005)pi++;
+    if(Math.abs(neg2[ni].v)<0.005)ni++;
+  }
+  const pd=document.getElementById('payouts');
+  pd.innerHTML='';
+  if(!debts.length) pd.innerHTML='<div class="card" style="text-align:center;color:var(--text2)">all square! 🤝</div>';
+  else debts.forEach(d=>{ const div=document.createElement('div'); div.className='owes-row'; div.innerHTML='<span style="color:#6b1a1a;font-size:13px;font-weight:500">'+escH(dp[d.from])+' owes '+escH(dp[d.to])+'</span><span style="font-size:19px;font-weight:700;color:var(--red)">'+fmt(d.amt)+'</span>'; pd.appendChild(div); });
+  const hl=document.getElementById('hole-log');
+  hl.innerHTML='';
+  log.forEach(e=>{
+    const row=document.createElement('div'); row.className='result-line';
+    let right='';
+    if(e.skipped) right='<span style="color:var(--text2);font-size:12px">not played</span>';
+    else if(e.isTie) right='<span style="color:var(--text2)">tie — carry</span>';
+    else right='<span style="color:var(--green);font-weight:600">'+escH(getDisplayPlayers()[e.holeWinner])+' +'+fmt(e.finalPot)+(e.isBirdie?' 🐦':'')+'</span>';
+    if(e.honorsPaid>=0) right+=' <span style="color:var(--gold);font-size:11px">🏅+'+fmt(G.hon)+'</span>';
+    row.innerHTML='<span style="color:var(--text2);min-width:52px;display:inline-block">hole '+(e.h+1)+'</span>'+right;
+    hl.appendChild(row);
+  });
+}
+
+window.refreshCourseList=function(){
+  const courses=getCourses();
+  const cl=document.getElementById('course-list');
+  cl.innerHTML='';
+  if(!courses.length){cl.innerHTML='<div style="color:var(--text2);font-size:13px;padding:8px">no courses saved yet</div>';return;}
+  const card=document.createElement('div'); card.className='card'; card.style.padding='4px 14px';
+  courses.forEach((c,i)=>{
+    const row=document.createElement('div'); row.className='course-row';
+    row.innerHTML='<div><div style="font-size:14px;font-weight:600">'+escH(c.name)+'</div><div style="font-size:12px;color:var(--text2)">'+c.holes+' holes · par '+c.pars.join(', ')+'</div></div><button class="btn sm danger" onclick="window.deleteCourse('+i+')">delete</button>';
+    card.appendChild(row);
+  });
+  cl.appendChild(card);
+};
+window.showAddCourse=function(){ document.getElementById('add-course-form').style.display=''; newCourseHoles=9; buildNewParGrid(); };
+window.cancelAddCourse=function(){ document.getElementById('add-course-form').style.display='none'; };
+window.setNewHoles=function(n,el){ newCourseHoles=n; document.querySelectorAll('#new-holes-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); buildNewParGrid(); };
+function buildNewParGrid(){
+  const grid=document.getElementById('new-par-grid'); grid.innerHTML='';
+  for(let i=0;i<newCourseHoles;i++){
+    const cell=document.createElement('div'); cell.className='par-cell';
+    cell.innerHTML='<label>H'+(i+1)+'</label><input type="number" min="3" max="5" value="4" id="npar'+i+'">';
+    grid.appendChild(cell);
+  }
+}
+window.saveCourse=function(){
+  const name=document.getElementById('new-course-name').value.trim();
+  if(!name){alert('Enter a course name');return;}
+  const pars=[];
+  for(let i=0;i<newCourseHoles;i++) pars.push(parseInt(document.getElementById('npar'+i).value)||4);
+  const courses=getCourses(); courses.push({name,holes:newCourseHoles,pars}); saveCourses(courses);
+  document.getElementById('add-course-form').style.display='none';
+  document.getElementById('new-course-name').value='';
+  refreshCourseList(); refreshHome();
+};
+window.deleteCourse=function(i){
+  if(!confirm('Delete this course?'))return;
+  const courses=getCourses(); courses.splice(i,1); saveCourses(courses);
+  refreshCourseList(); refreshHome();
+};
+
+refreshHome();
+buildNewParGrid();
+</script>
+</body>
+</html>
