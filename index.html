@@ -462,8 +462,10 @@ window.showPastGames = async function(){
     const row = document.createElement('div');
     row.className = 'past-game-row';
     row.onclick = function(){ loadPastGame(id); };
+    const courseLine = g.courseName ? g.courseName+' · ' : '';
     row.innerHTML = '<div style="font-size:18px;font-weight:800">'+(g.players||[]).join(', ')+'</div>'
-      +'<div style="font-size:14px;color:var(--text2);font-weight:700">'+date+' at '+time+' · '+(g.holes||9)+' holes · $'+(g.bet||1)+'/hole</div>';
+      +'<div style="font-size:15px;color:var(--green);font-weight:700">'+courseLine+(g.holes||9)+' holes · $'+(g.bet||1)+'/hole</div>'
+      +'<div style="font-size:14px;color:var(--text2);font-weight:700">📅 '+date+' at '+time+'</div>';
     el.appendChild(row);
   });
   document.getElementById('past-game-overlay').classList.add('active');
@@ -475,9 +477,11 @@ window.loadPastGame = async function(id){
   // Load game data into G for rendering
   const saved = {...G};
   G.players=g.players||[]; G.holes=g.holes||9; G.pars=g.pars||[]; G.bet=g.bet||1; G.hon=g.hon||0; G.scores=g.scores||[]; G.editedCells=g.editedCells||{};
+  G._pastGameMeta={courseName:g.courseName||'',completedAt:g.completedAt};
   renderScorecard();
   // Restore G
   Object.assign(G, saved);
+  G._pastGameMeta=null;
   document.getElementById('past-game-overlay').classList.remove('active');
   document.getElementById('scorecard-overlay').classList.add('active');
 };
@@ -861,8 +865,24 @@ function renderScorecard(){
   const played=log.filter(e=>!e.skipped);
   if(!played.length){ document.getElementById('scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>'; return; }
 
+  // Header with course name and date/time - use past game meta if viewing history
+  let headerCourseName='', headerDate='';
+  if(G._pastGameMeta){
+    headerCourseName=G._pastGameMeta.courseName||'';
+    const d=new Date(G._pastGameMeta.completedAt);
+    headerDate=d.toLocaleDateString()+' at '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  } else {
+    const now=new Date();
+    headerDate=now.toLocaleDateString()+' at '+now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const courseEl=document.getElementById('course-select');
+    headerCourseName=courseEl&&courseEl.selectedIndex>0?courseEl.options[courseEl.selectedIndex].text:'';
+  }
+  let html='';
+  if(headerCourseName) html+='<div style="font-size:18px;font-weight:900;color:var(--green);margin-bottom:4px">⛳ '+escH(headerCourseName)+'</div>';
+  html+='<div style="font-size:14px;color:var(--text2);font-weight:700;margin-bottom:12px">📅 '+headerDate+'</div>';
+
   // Build table: names left, holes across, total strokes + net money columns on right
-  let html='<div class="sc-wrap"><table class="sc-tbl"><thead><tr><th class="name-col">name</th>';
+  html+='<div class="sc-wrap"><table class="sc-tbl"><thead><tr><th class="name-col">name</th>';
   played.forEach((e,ci)=>{ html+='<th class="'+(ci%2===0?'col-a':'col-b')+'">H'+(e.h+1)+'</th>'; });
   html+='<th style="background:var(--blue);color:#fff">strokes</th>';
   html+='<th style="background:var(--green);color:#fff">money</th>';
@@ -944,8 +964,10 @@ function renderScorecard(){
 // ── RESULTS ──────────────────────────────────────────────────────────────────
 window.showResults=function(){ buildResults('results','net-grid','payouts'); showScreen('results'); };
 window.endGame=async function(){
-  // Save completed game
-  const gameData={ players:G.players, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon, scores:G.scores, editedCells:G.editedCells||{} };
+  // Save completed game including course name and timestamp
+  const courseEl=document.getElementById('course-select');
+  const courseName=courseEl&&courseEl.selectedIndex>0?courseEl.options[courseEl.selectedIndex].text:'';
+  const gameData={ players:G.players, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon, scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName };
   await saveCompletedGame(gameData);
   buildResults('final-results','final-net-grid','final-payouts');
   showScreen('final-results');
