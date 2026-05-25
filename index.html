@@ -757,13 +757,32 @@ function renderHole(){
     const lockedMsg=!canEdit?'<div class="locked-label">waiting...</div>':'';
     div.innerHTML='<label>'+escH(p)+(isEdited?' <span style="color:var(--yellow);font-size:13px">✏️ edited</span>':'')+'</label>'
       +'<input type="number" min="1" max="15" inputmode="numeric" value="'+val+'" class="'+editedClass+'" '
-      +(canEdit?'oninput="window._sc('+h+','+i+',this.value)"':'disabled')+'>'
+      +(canEdit?'oninput="window._sc('+h+','+i+',this.value)" onchange="window._advanceFocus('+i+','+dp.length+')'+'"':'disabled')+'>'
       +lockedMsg;
     si.appendChild(div);
   });
   renderHoleResult(); highlightWinners(); renderLiveScores(); checkMissingScores();
 }
 
+window._advanceFocus=function(currentIdx, totalPlayers){
+  // Find next empty input after current player
+  const inputs=document.querySelectorAll('#score-inputs input:not(:disabled)');
+  const inputArr=Array.from(inputs);
+  // Find current input and move to next empty one
+  for(let j=0;j<inputArr.length;j++){
+    if(inputArr[j]===document.activeElement){
+      // Look for next empty input
+      for(let k=j+1;k<inputArr.length;k++){
+        if(!inputArr[k].value){
+          inputArr[k].focus();
+          inputArr[k].select();
+          return;
+        }
+      }
+      break;
+    }
+  }
+};
 window._sc=async function(h,i,v){
   if(!G.scores[h]) G.scores[h]=Array(getDisplayPlayers().length).fill('');
   G.scores[h][i]=v===''?'':parseInt(v);
