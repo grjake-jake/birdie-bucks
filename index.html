@@ -973,15 +973,38 @@ function renderScorecard(){
   dp.forEach(()=>{ html+='<td class="par-cell"></td>'; });
   html+='</tr>';
 
+  // Color schemes per hole - alternating blue and green families
+  const holeColors=[
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+    {light:'#dbeeff',mid:'#b8d8ff',dark:'#0a2d6b',name:'blue'},
+    {light:'#dbf5e0',mid:'#b8e8c0',dark:'#1a5c1a',name:'green'},
+  ];
+
   played.forEach((e,ci)=>{
-    // Alternating hole group colors - 3 rows per hole share same background
-    const holeBg=ci%2===0?'#f0f7f0':'#f0f0f8';
-    const holeBgDark=ci%2===0?'#d8ecd8':'#d8d8ec';
+    const hc=holeColors[ci%holeColors.length];
+    const holeBg=hc.light;
+    const holeBgDark=hc.mid;
+    const holeAccent=hc.dark;
     const par=e.par||4;
 
-    // Score row
-    html+='<tr style="background:'+holeBg+';border-top:3px solid '+(ci%2===0?'#006400':'#003399')+';">';
-    html+='<td class="name-cell" style="background:'+holeBg+';font-size:16px;font-weight:900;border-top:3px solid '+(ci%2===0?'#006400':'#003399')+'">H'+(e.h+1)+'<br><span style="font-size:13px;color:var(--blue);font-weight:700">par '+par+'</span></td>';
+    // Score row - thick top border marks new hole clearly
+    html+='<tr style="background:'+holeBg+';border-top:5px solid '+holeAccent+';">';
+    html+='<td class="name-cell" style="background:'+holeBg+';font-size:16px;font-weight:900;color:#000000;border-top:5px solid '+holeAccent+'">H'+(e.h+1)+'<br><span style="font-size:13px;color:'+holeAccent+';font-weight:800">par '+par+'</span></td>';
     dp.forEach((p,pi)=>{
       const sc=e.scores[pi];
       const isWin=!e.isTie&&e.holeWinner===pi;
@@ -1001,8 +1024,8 @@ function renderScorecard(){
     html+='</tr>';
 
     // Money row for this hole
-    html+='<tr style="background:'+holeBgDark+'">';
-    html+='<td class="name-cell" style="background:'+holeBgDark+';font-size:13px;color:var(--text2);font-weight:800;padding:5px 8px">💰 hole</td>';
+    html+='<tr style="background:'+holeBgDark+';border-top:1px solid '+holeAccent+';">';
+    html+='<td class="name-cell" style="background:'+holeBgDark+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px">💰 hole</td>';
     dp.forEach((p,pi)=>{
       let holeDelta=0, honDelta=0;
       if(!e.isTie&&e.holeWinner===pi) holeDelta=e.finalPot*(n-1);
@@ -1021,8 +1044,8 @@ function renderScorecard(){
     html+='</tr>';
 
     // Running total row
-    html+='<tr style="background:'+holeBg+'">';
-    html+='<td class="name-cell" style="background:'+holeBg+';font-size:13px;color:var(--text2);font-weight:800;padding:5px 8px">📊 total</td>';
+    html+='<tr style="background:'+holeBg+';border-bottom:2px solid '+holeAccent+';">';
+    html+='<td class="name-cell" style="background:'+holeBg+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px;border-bottom:2px solid '+holeAccent+'">📊 total</td>';
     dp.forEach((p,pi)=>{
       const pos=running[pi]>0, neg=running[pi]<0;
       html+='<td style="font-size:17px;font-weight:900;padding:5px 4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+';">'+(pos?'+':'')+fmt(running[pi])+'</td>';
