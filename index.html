@@ -748,8 +748,12 @@ function calcFull(){
       pot=G.bet;
     } else { pot+=G.bet; }
     let newHH=hh;
-    if(hh===-1){ if(!isTie) newHH=winners[0]; }
-    else{
+    if(hh===-1){
+      if(!isTie){
+        newHH=winners[0];
+        if(G.hon>0){ for(let i=0;i<n;i++){ if(i!==newHH){ net[i]-=G.hon; net[newHH]+=G.hon; honWon[newHH]+=G.hon; } } }
+      }
+    } else {
       if(G.hon>0){ for(let i=0;i<n;i++){ if(i!==hh){ net[i]-=G.hon; net[hh]+=G.hon; honWon[hh]+=G.hon; } } }
       if(min<nums[hh]&&!isTie) newHH=winners[0];
     }
