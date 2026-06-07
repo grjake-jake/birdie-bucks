@@ -979,7 +979,7 @@ function renderScorecard(){
 
   // Par row
   html+='<tr><td class="name-cell" style="font-size:14px;color:var(--blue);font-weight:800">par</td>';
-  dp.forEach(()=>{ html+='<td class="par-cell"></td>'; });
+  played.forEach((e)=>{ html+='<td class="par-cell" style="font-size:18px;font-weight:900;color:var(--blue)">'+(e.par||4)+'</td>'; });
   html+='</tr>';
 
   // Color schemes per hole - alternating blue and green families
@@ -1030,35 +1030,39 @@ function renderScorecard(){
       const boldWin=isWin?'font-weight:900;border:3px solid '+holeAccent+';':'';
       const birdieClass=(isBirdieCell||isAceCell)?' birdie-cell':'';
       html+='<td class="'+birdieClass+'" style="background:'+holeBg+';'+boldWin+'font-size:22px;padding:8px 4px;">'
-        +sc+scoreLabel+(holdsHonors?'<sup style="color:var(--gold);font-size:13px">H</sup>':'')
+        +sc+scoreLabel+(holdsHonors?'<sup style="color:var(--gold);font-size:16px;font-weight:900"> H</sup>':'')
         +(isEdited?'<sup style="color:var(--yellow)">✏</sup>':'')+'</td>';
     });
     html+='</tr>';
 
-    // Money row for this h';
+    // Money row for this h/sup>':'')+'</td>';
     });
     html+='</tr>';
 
     // Money row for this hole
     html+='<tr style="background:'+holeBgDark+';border-top:1px solid '+holeAccent+';">';
     html+='<td class="name-cell" style="background:'+holeBgDark+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px">💰 hole</td>';
-    dp.forEach((p,pi)=>{
-      let holeDelta=0, honDelta=0;
-      if(!e.isTie&&e.holeWinner===pi) holeDelta=e.finalPot*(n-1);
-      else if(!e.isTie&&e.holeWinner!==-1) holeDelta=-e.finalPot;
-      if(e.honorsHolder>=0&&e.honorsHolder===pi) honDelta=G.hon*(n-1);
-      else if(e.honorsHolder>=0&&e.honorsHolder!==pi) honDelta=-G.hon;
-      const total=holeDelta+honDelta;
-      running[pi]+=total;
-      const pos=total>0, neg=total<0;
-      let parts=[];
-      if(holeDelta!==0) parts.push((holeDelta>0?'+':'')+fmt(holeDelta));
-      if(honDelta!==0&&G.hon>0) parts.push((honDelta>0?'🏅+':'🏅-')+fmt(Math.abs(honDelta)));
-      const moneyStr=parts.length?parts.join(' '):'—';
-      html+='<td style="font-size:15px;font-weight:900;padding:5px 4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+'">'+moneyStr+'</td>';
-    });
+    if(e.isTie){
+      const nextPot=e.finalPot+G.bet;
+      html+='<td colspan="'+n+'" style="text-align:center;font-size:16px;font-weight:900;padding:8px 4px;color:var(--gold);background:'+holeBgDark+'">⏩ CARRY OVER — next pot: '+fmt(nextPot)+'</td>';
+    } else {
+      dp.forEach((p,pi)=>{
+        let holeDelta=0, honDelta=0;
+        if(e.holeWinner===pi) holeDelta=e.finalPot*(n-1);
+        else holeDelta=-e.finalPot;
+        if(e.honorsHolder>=0&&e.honorsHolder===pi) honDelta=G.hon*(n-1);
+        else if(e.honorsHolder>=0&&e.honorsHolder!==pi) honDelta=-G.hon;
+        const total=holeDelta+honDelta;
+        running[pi]+=total;
+        const pos=total>0, neg=total<0;
+        let parts=[];
+        if(holeDelta!==0) parts.push((holeDelta>0?'+':'')+fmt(holeDelta));
+        if(honDelta!==0&&G.hon>0) parts.push((honDelta>0?'🏅+':'🏅-')+fmt(Math.abs(honDelta)));
+        const moneyStr=parts.join(' ')||'—';
+        html+='<td style="font-size:15px;font-weight:900;padding:5px 4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+'">'+moneyStr+'</td>';
+      });
+    }
     html+='</tr>';
-
     // Running total row
     html+='<tr style="background:'+holeBg+';border-bottom:2px solid '+holeAccent+';">';
     html+='<td class="name-cell" style="background:'+holeBg+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px;border-bottom:2px solid '+holeAccent+'">📊 total</td>';
