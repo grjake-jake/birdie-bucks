@@ -162,6 +162,11 @@ select.inp{color:var(--text);}
 .past-game-row{padding:12px 0;border-bottom:2px solid var(--border);cursor:pointer;}
 .past-game-row:last-child{border-bottom:none;}
 .past-game-row:active{background:var(--green-light);}
+.birdie-cell{animation:birdie-pulse 1.4s ease-in-out infinite;}
+@keyframes birdie-pulse{
+  0%,100%{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(122,82,0,0.3);}
+  50%{box-shadow:0 0 0 5px var(--gold),0 0 0 10px rgba(122,82,0,0.15);}
+}
 </style>
 </head>
 <body>
@@ -1020,10 +1025,17 @@ function renderScorecard(){
       else if(diff<=-2) scoreLabel='<br><span style="font-size:11px;color:var(--gold);font-weight:900">EAGLE</span>';
       else if(diff===-1) scoreLabel='<br><span style="font-size:11px;color:var(--green);font-weight:900">BIRDIE</span>';
       else if(diff===1) scoreLabel='<br><span style="font-size:11px;color:var(--text3);font-weight:700">bogey</span>';
-      const winStyle=isWin?'color:var(--green);font-weight:900;':'';
-      html+='<td style="background:'+(isWin?'#c8f0c8':holeBg)+';'+winStyle+'font-size:22px;padding:8px 4px;">'
+      const isBirdieCell=isWin&&(Number(sc)<=(e.par-1))&&Number(sc)!==1;
+      const isAceCell=Number(sc)===1&&isWin;
+      const boldWin=isWin?'font-weight:900;border:3px solid '+holeAccent+';':'';
+      const birdieClass=(isBirdieCell||isAceCell)?' birdie-cell':'';
+      html+='<td class="'+birdieClass+'" style="background:'+holeBg+';'+boldWin+'font-size:22px;padding:8px 4px;">'
         +sc+scoreLabel+(holdsHonors?'<sup style="color:var(--gold);font-size:13px">H</sup>':'')
         +(isEdited?'<sup style="color:var(--yellow)">✏</sup>':'')+'</td>';
+    });
+    html+='</tr>';
+
+    // Money row for this h';
     });
     html+='</tr>';
 
