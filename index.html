@@ -1147,20 +1147,39 @@ function renderScorecard(){
       const par=e.par||4;
       const row=document.createElement('div');
       row.className='breakdown-row';
-      let text='';
+      let lines=[];
+
       if(e.isTie){
-        text='Hole '+(e.h+1)+' (Par '+par+'): Tie — pot carries to '+fmt(e.finalPot+G.bet)+' each';
+        lines.push('Tie — pot carries to '+fmt(e.finalPot+G.bet)+' each');
+        if(G.hon>0&&e.honorsHolder>=0){
+          lines.push(dp[e.honorsHolder]+' holds honors — wins '+fmt(G.hon)+' from each');
+        }
       } else {
         const w=dp[e.holeWinner];
-        const diff=e.scores[e.holeWinner]-par;
-        const scoreType=e.scores[e.holeWinner]==1?'ACE':diff<=-2?'Eagle':diff===-1?'Birdie':'Par win';
-        const totalWon=fmt(e.finalPot*(n-1));
-        text='Hole '+(e.h+1)+' (Par '+par+'): '+w+' wins '+totalWon+(e.isBirdie||e.scores[e.holeWinner]==1?' 🐦 '+scoreType:'');
-        if(e.honorsHolder>=0){
-          text+=' · '+dp[e.honorsHolder]+' holds honors +'+fmt(G.hon*(n-1));
+        const sc=e.scores[e.holeWinner];
+        const diff=sc-par;
+        let scoreType='';
+        if(sc==1) scoreType=' — ACE';
+        else if(diff<=-2) scoreType=' — eagle doubles pot';
+        else if(diff===-1) scoreType=' — birdie doubles pot';
+        lines.push(w+' wins '+fmt(e.finalPot*(n-1))+scoreType);
+        if(G.hon>0){
+          const prevHH=e.honorsHolder;
+          const newHH=e.newHH;
+          if(prevHH===-1){
+            lines.push(w+' earns honors — wins '+fmt(G.hon)+' from each');
+          } else if(newHH===e.holeWinner&&newHH!==prevHH){
+            lines.push(w+' takes honors from '+dp[prevHH]+' — wins '+fmt(G.hon)+' from each');
+          } else if(prevHH===e.holeWinner){
+            lines.push(w+' holds honors — wins '+fmt(G.hon)+' from each');
+          } else {
+            lines.push(dp[prevHH]+' holds honors — wins '+fmt(G.hon)+' from each');
+          }
         }
       }
-      row.innerHTML='<div class="breakdown-hole">Hole '+(e.h+1)+'</div><div class="breakdown-detail">'+escH(text.replace('Hole '+(e.h+1)+' (Par '+par+'): ',''))+'</div>';
+
+      row.innerHTML='<div class="breakdown-hole">Hole '+(e.h+1)+' — Par '+par+'</div>'
+        +lines.map(l=>'<div class="breakdown-detail">'+escH(l)+'</div>').join('');
       breakdownDiv.appendChild(row);
     });
 
