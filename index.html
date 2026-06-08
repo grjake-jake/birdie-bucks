@@ -162,6 +162,10 @@ select.inp{color:var(--text);}
 .past-game-row{padding:12px 0;border-bottom:2px solid var(--border);cursor:pointer;}
 .past-game-row:last-child{border-bottom:none;}
 .past-game-row:active{background:var(--green-light);}
+.breakdown-row{padding:10px 0;border-bottom:1px solid var(--border);font-size:18px;font-weight:700;color:var(--text);}
+.breakdown-row:last-child{border-bottom:none;}
+.breakdown-hole{font-size:16px;font-weight:900;color:var(--blue);margin-bottom:2px;}
+.breakdown-detail{font-size:17px;color:var(--text2);}
 .birdie-cell{animation:birdie-pulse 1.4s ease-in-out infinite;}
 @keyframes birdie-pulse{
   0%,100%{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(122,82,0,0.3);}
@@ -948,10 +952,6 @@ function renderScorecard(){
   const dp=getDisplayPlayers(), n=dp.length;
   const {net,holeWon,honWon,log}=calcFull();
   const played=log.filter(e=>!e.skipped);
-  if(!played.length){
-    document.getElementById('scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>';
-    return;
-  }
 
   // Header
   let headerCourseName='', headerDate='';
@@ -965,117 +965,134 @@ function renderScorecard(){
     const courseEl=document.getElementById('course-select');
     headerCourseName=courseEl&&courseEl.selectedIndex>0?courseEl.options[courseEl.selectedIndex].text:'';
   }
-  let html='';
-  if(headerCourseName) html+='<div style="font-size:18px;font-weight:900;color:var(--green);margin-bottom:4px">⛳ '+escH(headerCourseName)+'</div>';
-  html+='<div style="font-size:14px;color:var(--text2);font-weight:700;margin-bottom:12px">📅 '+headerDate+'</div>';
 
-  // Track running money per player
-  const running=Array(n).fill(0);
+  const scEl=document.getElementById('scorecard-content');
+  scEl.innerHTML='';
 
-  // Build table
-  html+='<div class="sc-wrap"><table class="sc-tbl"><thead><tr>';
-  html+='<th class="name-col">hole</th>';
-  dp.forEach(p=>{ html+='<th>'+escH(p)+'</th>'; });
-  html+='</tr></thead><tbody>';
+  // Course + date header
+  if(headerCourseName){
+    const ch=document.createElement('div');
+    ch.style.cssText='font-size:20px;font-weight:900;color:var(--green);margin-bottom:2px';
+    ch.textContent='⛳ '+headerCourseName;
+    scEl.appendChild(ch);
+  }
+  const dh=document.createElement('div');
+  dh.style.cssText='font-size:15px;color:var(--text2);font-weight:700;margin-bottom:14px';
+  dh.textContent='📅 '+headerDate;
+  scEl.appendChild(dh);
+
+  if(!played.length){
+    const empty=document.createElement('div');
+    empty.style.cssText='text-align:center;padding:20px;font-size:20px;font-weight:700;color:var(--text2)';
+    empty.textContent='No holes played yet';
+    scEl.appendChild(empty);
+    return;
+  }
+
+  // ── CLEAN SCORE TABLE ──
+  const tableWrap=document.createElement('div');
+  tableWrap.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px';
+
+  const tbl=document.createElement('table');
+  tbl.style.cssText='border-collapse:collapse;width:100%;min-width:'+((n+1)*70)+'px';
+
+  // Header row — sticky player names
+  const thead=document.createElement('thead');
+  let headHTML='<tr><th style="background:var(--blue);color:#fff;padding:10px 8px;font-size:15px;font-weight:900;text-align:left;border:2px solid #000;min-width:80px;position:sticky;left:0;z-index:3">HOLE</th>';
+  dp.forEach(p=>{
+    headHTML+='<th style="background:var(--green);color:#fff;padding:10px 6px;font-size:15px;font-weight:900;text-align:center;border:2px solid #000;min-width:65px">'+escH(p)+'</th>';
+  });
+  headHTML+='</tr>';
+  thead.innerHTML=headHTML;
+  tbl.appendChild(thead);
 
   // Par row
-  html+='<tr><td class="name-cell" style="font-size:14px;color:var(--blue);font-weight:800">par</td>';
-  played.forEach((e)=>{ html+='<td class="par-cell" style="font-size:18px;font-weight:900;color:var(--blue)">'+(e.par||4)+'</td>'; });
-  html+='</tr>';
+  const tbody=document.createElement('tbody');
+  let parHTML='<tr style="background:#f0f0f0"><td style="padding:6px 8px;font-size:14px;font-weight:900;color:var(--blue);border:2px solid #999;text-align:left;position:sticky;left:0;background:#f0f0f0;z-index:2">PAR</td>';
+  played.forEach(e=>{
+    parHTML+='<td style="padding:6px 4px;font-size:16px;font-weight:800;text-align:center;border:2px solid #999;color:var(--blue)">'+( e.par||4)+'</td>';
+  });
+  parHTML+='</tr>';
+  tbody.innerHTML=parHTML;
 
-  // Color schemes per hole - alternating blue and green families
+  // Hole colors
   const holeColors=[
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
-    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
-    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',dark:'#003d99'},
+    {light:'#b8f0b8',dark:'#1a6b1a'},
   ];
 
+  // Score rows
   played.forEach((e,ci)=>{
-    const hc=holeColors[ci%holeColors.length];
-    const holeBg=hc.light;
-    const holeBgDark=hc.mid;
-    const holeAccent=hc.dark;
+    const hc=holeColors[ci%2];
     const par=e.par||4;
+    const tr=document.createElement('tr');
 
-    // Score row - thick top border marks new hole clearly
-    html+='<tr style="background:'+holeBg+';border-top:5px solid '+holeAccent+';">';
-    html+='<td class="name-cell" style="background:'+holeBg+';font-size:16px;font-weight:900;color:#000000;border-top:5px solid '+holeAccent+'">H'+(e.h+1)+'<br><span style="font-size:13px;color:'+holeAccent+';font-weight:800">par '+par+'</span></td>';
+    // Hole label cell
+    const holeCell=document.createElement('td');
+    holeCell.style.cssText='padding:10px 8px;font-size:15px;font-weight:900;border:2px solid #999;text-align:left;background:'+hc.light+';position:sticky;left:0;z-index:2;border-left:4px solid '+hc.dark;
+    holeCell.innerHTML='<div style="font-size:16px;font-weight:900;color:#000">Hole '+(e.h+1)+'</div><div style="font-size:13px;color:'+hc.dark+';font-weight:800">Par '+(par)+'</div>';
+    tr.appendChild(holeCell);
+
     dp.forEach((p,pi)=>{
       const sc=e.scores[pi];
       const isWin=!e.isTie&&e.holeWinner===pi;
       const holdsHonors=e.honorsHolder===pi;
       const isEdited=G.editedCells&&G.editedCells[e.h+'_'+pi];
       const diff=Number(sc)-par;
-      let scoreLabel='';
-      if(sc==1) scoreLabel='<br><span style="font-size:11px;color:var(--gold);font-weight:900">ACE!</span>';
-      else if(diff<=-2) scoreLabel='<br><span style="font-size:11px;color:var(--gold);font-weight:900">EAGLE</span>';
-      else if(diff===-1) scoreLabel='<br><span style="font-size:11px;color:var(--green);font-weight:900">BIRDIE</span>';
-      else if(diff===1) scoreLabel='<br><span style="font-size:11px;color:var(--text3);font-weight:700">bogey</span>';
-      const isBirdieCell=isWin&&(Number(sc)<=(e.par-1))&&Number(sc)!==1;
-      const isAceCell=Number(sc)===1&&isWin;
-      const boldWin=isWin?'font-weight:900;border:3px solid '+holeAccent+';':'';
-      const birdieClass=(isBirdieCell||isAceCell)?' birdie-cell':'';
-      html+='<td class="'+birdieClass+'" style="background:'+holeBg+';'+boldWin+'font-size:22px;padding:8px 4px;">'
-        +sc+scoreLabel+(holdsHonors?'<sup style="color:var(--gold);font-size:16px;font-weight:900"> H</sup>':'')
-        +(isEdited?'<sup style="color:var(--yellow)">✏</sup>':'')+'</td>';
-    });
-    html+='</tr>';
+      const isBirdie=isWin&&diff<=-1&&Number(sc)!==1;
+      const isAce=Number(sc)===1&&isWin;
 
-    // Money row for this hole
-    html+='<tr style="background:'+holeBgDark+';border-top:1px solid '+holeAccent+';">';
-    html+='<td class="name-cell" style="background:'+holeBgDark+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px">💰 hole</td>';
+      const td=document.createElement('td');
+      td.style.cssText='padding:8px 4px;text-align:center;border:2px solid #999;background:'+(isWin&&!isBirdie&&!isAce?'#c8f0c8':hc.light)+';font-size:26px;font-weight:900;color:#000;position:relative';
+      if(isBirdie||isAce) td.className='birdie-cell';
+
+      let label='';
+      if(sc==1) label='ACE';
+      else if(diff<=-2) label='EAGLE';
+      else if(diff===-1) label='BIRDIE';
+      else if(diff===0) label='par';
+      else if(diff===1) label='bogey';
+      else if(diff>=2) label='pick up';
+
+      td.innerHTML='<div>'+sc+'</div>'
+        +'<div style="font-size:11px;font-weight:800;color:'+(diff<0?'var(--green)':diff===0?'var(--blue)':'var(--text3)')+'">'+label+'</div>'
+        +(holdsHonors?'<div style="font-size:12px;font-weight:900;color:var(--gold);background:var(--gold-light);border-radius:4px;margin-top:2px">HONORS</div>':'')
+        +(isEdited?'<div style="font-size:11px;color:var(--yellow)">edited</div>':'');
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+
+    // Result row
+    const resultTr=document.createElement('tr');
+    resultTr.style.cssText='background:'+(ci%2===0?'#dceeff':'#d4f5d4');
+    const resultLabel=document.createElement('td');
+    resultLabel.style.cssText='padding:5px 8px;font-size:13px;font-weight:900;color:#000;border:2px solid #999;text-align:left;position:sticky;left:0;background:'+(ci%2===0?'#dceeff':'#d4f5d4')+';z-index:2';
+    resultLabel.textContent='💰 result';
+    resultTr.appendChild(resultLabel);
+
     if(e.isTie){
-      const nextPot=e.finalPot+G.bet;
-      html+='<td colspan="'+n+'" style="text-align:center;font-size:16px;font-weight:900;padding:8px 4px;color:var(--gold);background:'+holeBgDark+'">⏩ CARRY OVER — next pot: '+fmt(nextPot)+'</td>';
+      const carryTd=document.createElement('td');
+      carryTd.colSpan=n;
+      carryTd.style.cssText='padding:6px;text-align:center;font-size:15px;font-weight:900;color:var(--gold);border:2px solid #999';
+      carryTd.textContent='⏩ CARRY OVER — next pot: '+fmt(e.finalPot+G.bet)+' each';
+      resultTr.appendChild(carryTd);
     } else {
-      dp.forEach((p,pi)=>{
-        let holeDelta=0, honDelta=0;
-        if(e.holeWinner===pi) holeDelta=e.finalPot*(n-1);
-        else holeDelta=-e.finalPot;
-        if(e.honorsHolder>=0&&e.honorsHolder===pi) honDelta=G.hon*(n-1);
-        else if(e.honorsHolder>=0&&e.honorsHolder!==pi) honDelta=-G.hon;
-        const total=holeDelta+honDelta;
-        running[pi]+=total;
-        const pos=total>0, neg=total<0;
-        let parts=[];
-        if(holeDelta!==0) parts.push((holeDelta>0?'+':'')+fmt(holeDelta));
-        if(honDelta!==0&&G.hon>0) parts.push((honDelta>0?'🏅+':'🏅-')+fmt(Math.abs(honDelta)));
-        const moneyStr=parts.join(' ')||'—';
-        html+='<td style="font-size:15px;font-weight:900;padding:5px 4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+'">'+moneyStr+'</td>';
+      dp.forEach((_,pi)=>{
+        const isW=e.holeWinner===pi;
+        const td=document.createElement('td');
+        td.style.cssText='padding:5px 4px;text-align:center;font-size:14px;font-weight:900;border:2px solid #999;color:'+(isW?'var(--green)':'var(--red)');
+        td.textContent=isW?'+'+fmt(e.finalPot*(n-1)):'-'+fmt(e.finalPot);
+        resultTr.appendChild(td);
       });
     }
-    html+='</tr>';
-    // Running total row
-    html+='<tr style="background:'+holeBg+';border-bottom:2px solid '+holeAccent+';">';
-    html+='<td class="name-cell" style="background:'+holeBg+';font-size:14px;color:#000000;font-weight:900;padding:6px 8px;border-bottom:2px solid '+holeAccent+'">📊 total</td>';
-    dp.forEach((p,pi)=>{
-      const pos=running[pi]>0, neg=running[pi]<0;
-      html+='<td style="font-size:17px;font-weight:900;padding:5px 4px;color:'+(pos?'var(--green)':neg?'var(--red)':'var(--text3)')+';">'+(pos?'+':'')+fmt(running[pi])+'</td>';
-    });
-    html+='</tr>';
+    tbody.appendChild(resultTr);
   });
 
-  html+='</tbody></table></div>';
+  tbl.appendChild(tbody);
+  tableWrap.appendChild(tbl);
+  scEl.appendChild(tableWrap);
 
-  // Who owes who - clear and simple
-  const scEl=document.getElementById('scorecard-content');
-  scEl.innerHTML=html;
-
+  // ── SETTLE UP ──
   const debts=[];
   const bal=net.map((v,i)=>({i,v}));
   const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
@@ -1089,35 +1106,72 @@ function renderScorecard(){
     if(Math.abs(neg2[ni].v)<0.005)ni++;
   }
 
-  const standingsDiv=document.createElement('div');
-  standingsDiv.className='totals-section';
-  const hdr=document.createElement('div');
-  hdr.style.cssText='font-size:15px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:800;border-bottom:2px solid var(--border);padding-bottom:6px;';
-  hdr.textContent='settle up';
-  standingsDiv.appendChild(hdr);
+  const settleHdr=document.createElement('div');
+  settleHdr.style.cssText='font-size:16px;font-weight:900;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:3px solid var(--border2);padding-bottom:8px;margin-bottom:12px';
+  settleHdr.textContent='settle up';
+  scEl.appendChild(settleHdr);
 
   if(!debts.length){
     const sq=document.createElement('div');
-    sq.style.cssText='text-align:center;color:var(--green);font-size:20px;font-weight:900;padding:12px 0';
-    sq.textContent='all square!';
-    standingsDiv.appendChild(sq);
+    sq.style.cssText='text-align:center;color:var(--green);font-size:22px;font-weight:900;padding:16px 0';
+    sq.textContent='All square! 🤝';
+    scEl.appendChild(sq);
   } else {
     debts.forEach(d=>{
       const row=document.createElement('div');
       row.className='owes-row';
-      row.style.marginBottom='8px';
+      row.style.marginBottom='10px';
       const nameSpan=document.createElement('span');
-      nameSpan.style.cssText='color:var(--red);font-size:18px;font-weight:900';
+      nameSpan.style.cssText='color:var(--red);font-size:20px;font-weight:900';
       nameSpan.textContent=dp[d.from]+' pays '+dp[d.to];
       const amtSpan=document.createElement('span');
-      amtSpan.style.cssText='font-size:26px;font-weight:900;color:var(--red)';
+      amtSpan.style.cssText='font-size:28px;font-weight:900;color:var(--red)';
       amtSpan.textContent=fmt(d.amt);
       row.appendChild(nameSpan);
       row.appendChild(amtSpan);
-      standingsDiv.appendChild(row);
+      scEl.appendChild(row);
     });
+
+    // Breakdown toggle
+    const toggleBtn=document.createElement('button');
+    toggleBtn.className='btn outline';
+    toggleBtn.style.cssText='margin-top:14px;font-size:18px';
+    toggleBtn.textContent='📋 see hole by hole breakdown';
+    const breakdownDiv=document.createElement('div');
+    breakdownDiv.style.display='none';
+    breakdownDiv.style.marginTop='12px';
+
+    // Build breakdown
+    played.forEach(e=>{
+      if(e.skipped) return;
+      const par=e.par||4;
+      const row=document.createElement('div');
+      row.className='breakdown-row';
+      let text='';
+      if(e.isTie){
+        text='Hole '+(e.h+1)+' (Par '+par+'): Tie — pot carries to '+fmt(e.finalPot+G.bet)+' each';
+      } else {
+        const w=dp[e.holeWinner];
+        const diff=e.scores[e.holeWinner]-par;
+        const scoreType=e.scores[e.holeWinner]==1?'ACE':diff<=-2?'Eagle':diff===-1?'Birdie':'Par win';
+        const totalWon=fmt(e.finalPot*(n-1));
+        text='Hole '+(e.h+1)+' (Par '+par+'): '+w+' wins '+totalWon+(e.isBirdie||e.scores[e.holeWinner]==1?' 🐦 '+scoreType:'');
+        if(e.honorsHolder>=0){
+          text+=' · '+dp[e.honorsHolder]+' holds honors +'+fmt(G.hon*(n-1));
+        }
+      }
+      row.innerHTML='<div class="breakdown-hole">Hole '+(e.h+1)+'</div><div class="breakdown-detail">'+escH(text.replace('Hole '+(e.h+1)+' (Par '+par+'): ',''))+'</div>';
+      breakdownDiv.appendChild(row);
+    });
+
+    toggleBtn.onclick=function(){
+      const showing=breakdownDiv.style.display!=='none';
+      breakdownDiv.style.display=showing?'none':'block';
+      toggleBtn.textContent=showing?'📋 see hole by hole breakdown':'▲ hide breakdown';
+    };
+    scEl.appendChild(toggleBtn);
+    scEl.appendChild(breakdownDiv);
   }
-  scEl.appendChild(standingsDiv);
 }
 
 
