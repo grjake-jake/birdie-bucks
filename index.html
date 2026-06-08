@@ -553,7 +553,7 @@ async function renderPlayerInputs(){
   const pi=document.getElementById('players-inputs');
   const knownPlayers = await getKnownPlayers();
   pi.innerHTML='';
-  for(let i=0;i<4;i++){
+  for(let i=0;i<6;i++){
     const wrapper=document.createElement('div'); wrapper.className='player-row'; wrapper.style.position='relative';
     const inp=document.createElement('input'); inp.className='inp'; inp.style.cssText='margin:0;flex:1;'; inp.placeholder=i===0?'Your name (required)':'Player '+(i+1)+' (optional)'; inp.value=G.players[i]||'';
     const sugBox=document.createElement('div'); sugBox.className='player-suggestions'; sugBox.style.display='none';
@@ -788,6 +788,7 @@ function renderHole(){
     hBar.textContent=honorsHolder===-1?'🏅 honors: win a hole first':'🏅 honors: '+escH(dp[honorsHolder])+' — '+fmt(G.hon)+' per player';
   } else hBar.style.display='none';
   const si=document.getElementById('score-inputs'); si.innerHTML='';
+  si.style.gridTemplateColumns=dp.length<=4?'repeat(2,minmax(0,1fr))':'repeat(3,minmax(0,1fr))';
   dp.forEach((p,i)=>{
     const div=document.createElement('div'); div.className='score-block';
     const val=G.scores[h]&&!isMissing(G.scores[h][i])?G.scores[h][i]:'';
@@ -984,24 +985,24 @@ function renderScorecard(){
 
   // Color schemes per hole - alternating blue and green families
   const holeColors=[
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
-    {light:'#cce5ff',mid:'#99caff',dark:'#003d99',name:'blue'},
-    {light:'#ccf2cc',mid:'#99e099',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
+    {light:'#b8d4ff',mid:'#7ab0ff',dark:'#003d99',name:'blue'},
+    {light:'#b8f0b8',mid:'#70d870',dark:'#1a6b1a',name:'green'},
   ];
 
   played.forEach((e,ci)=>{
@@ -1259,7 +1260,7 @@ window.ssRenderPlayerInputs = async function(){
   const pi=document.getElementById('ss-players-inputs');
   const knownPlayers = await getKnownPlayers();
   pi.innerHTML='';
-  for(let i=0;i<4;i++){
+  for(let i=0;i<6;i++){
     const wrapper=document.createElement('div'); wrapper.className='player-row'; wrapper.style.position='relative';
     const inp=document.createElement('input'); inp.className='inp'; inp.style.cssText='margin:0;flex:1;';
     inp.placeholder=i===0?'Your name (required)':'Player '+(i+1)+' (optional)'; inp.value=SS.players[i]||'';
