@@ -189,7 +189,7 @@ select.inp{color:var(--text);}
 <!-- PAST GAME OVERLAY -->
 <div class="overlay" id="past-game-overlay">
   <div class="scorecard-modal">
-    <div class="sc-title"><span>📋 last game</span><span class="sc-close" onclick="document.getElementById('past-game-overlay').classList.remove('active')">✕</span></div>
+    <div class="sc-title"><span>📋 past games</span><span class="sc-close" onclick="document.getElementById('past-game-overlay').classList.remove('active')">✕</span></div>
     <div id="past-game-content"></div>
     <button class="btn primary" style="margin-top:14px" onclick="document.getElementById('past-game-overlay').classList.remove('active')">close</button>
   </div>
@@ -237,7 +237,8 @@ select.inp{color:var(--text);}
   <button class="game-btn" onclick="showScreen('buckskins-mode')"><span class="game-icon">💰</span>Buck Skins<span class="game-arrow">›</span></button>
   <button class="game-btn" onclick="showScreen('stablestakes-home')"><span class="game-icon">📊</span>Stable Stakes<span class="game-arrow">›</span></button>
   <button class="game-btn coming-soon"><span class="game-icon">🐺</span>Wolf Wagers <span class="coming-soon-tag">coming soon</span><span class="game-arrow">›</span></button>
-  <button class="btn outline" style="margin-top:4px" onclick="showPastGames()">📋 last game played</button>
+  <button class="btn outline" style="margin-top:4px" onclick="showPastGames()">📋 past games</button>
+  <button class="btn outline" style="margin-top:4px" onclick="showScreen('how-to-play')">❓ how to play</button>
 </div>
 
 <!-- BUCKSKINS MODE SELECT -->
@@ -274,6 +275,7 @@ select.inp{color:var(--text);}
     <div><div class="app-title" style="font-size:20px">💰 Buck Skins</div><div class="app-sub">flat bet per hole</div></div>
     <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
   </div>
+  <button class="btn outline" style="margin-bottom:10px;font-size:16px;padding:10px 0;" onclick="showRules('buckskins')">❓ how Buck Skins works</button>
   <div class="card">
     <span class="field-label">course</span>
     <select class="inp" id="course-select" onchange="onCourseChange()"><option value="">-- select course --</option></select>
@@ -327,6 +329,7 @@ select.inp{color:var(--text);}
     <div><div class="app-title" style="font-size:20px">2️⃣ Back 9 Doubles</div><div class="app-sub">back 9 value doubles</div></div>
     <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
   </div>
+  <button class="btn outline" style="margin-bottom:10px;font-size:16px;padding:10px 0;" onclick="showRules('back9doubles')">❓ how Back 9 Doubles works</button>
   <div class="card">
     <span class="field-label">course</span>
     <select class="inp" id="b9-course-select" onchange="onB9CourseChange()"><option value="">-- select course --</option></select>
@@ -381,6 +384,7 @@ select.inp{color:var(--text);}
     <div><div class="app-title" style="font-size:20px">📈 Escalating Stakes</div><div class="app-sub">bet increases every 6 holes</div></div>
     <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
   </div>
+  <button class="btn outline" style="margin-bottom:10px;font-size:16px;padding:10px 0;" onclick="showRules('escalating')">❓ how Escalating Stakes works</button>
   <div class="card">
     <span class="field-label">course</span>
     <select class="inp" id="esc-course-select" onchange="onEscCourseChange()"><option value="">-- select course --</option></select>
@@ -580,6 +584,79 @@ select.inp{color:var(--text);}
   <div id="final-payouts"></div>
 </div>
 
+<!-- HOW TO PLAY -->
+<div id="how-to-play" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('main-home')">← back</button>
+    <div><div class="app-title" style="font-size:20px">❓ How To Play</div><div class="app-sub">Birdie Bucks</div></div>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">💰 Buck Skins</div>
+    <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.6;">
+      Each hole is worth a set dollar amount. The player with the lowest score on a hole wins that amount from every other player. If two or more players tie for the lowest score, nobody wins — the hole is a tie.
+    </div>
+    <div style="font-size:15px;font-weight:700;color:var(--text2);margin-top:12px;line-height:1.6;">
+      <div style="margin-bottom:8px;"><span style="color:var(--green);font-weight:900;">Carry-Overs (optional):</span> When a hole is tied, the dollar value carries over and adds to the next hole. Ties keep stacking until someone wins a hole outright.</div>
+      <div style="margin-bottom:8px;"><span style="color:var(--green);font-weight:900;">Birdie Doubles (optional):</span> If a player wins a hole with a birdie or better, the pot doubles. A $3 pot becomes $6 from every other player.</div>
+      <div><span style="color:var(--green);font-weight:900;">Honors (optional):</span> The player with the lowest score on a hole collects an additional set amount from every other player, separate from the skins pot.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">2️⃣ Back 9 Doubles</div>
+    <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.6;">
+      Plays exactly like Buck Skins but the stakes automatically double on the back 9. If the front 9 bet is $1 per hole, every hole on the back 9 is worth $2. Carry-overs and birdie doubles still apply on top of the doubled value.
+    </div>
+    <div style="font-size:15px;font-weight:700;color:var(--text2);margin-top:12px;line-height:1.6;">
+      Great for keeping the back 9 exciting when the front 9 results are already decided.
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">📈 Escalating Stakes</div>
+    <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.6;">
+      The bet amount increases every 6 holes. You set three dollar amounts before the round — one for holes 1-6, one for holes 7-12, and one for holes 13-18. Each tier can be a different amount.
+    </div>
+    <div style="font-size:15px;font-weight:700;color:var(--text2);margin-top:12px;line-height:1.6;">
+      <div style="margin-bottom:6px;">Example: holes 1-6 at $0.25, holes 7-12 at $0.50, holes 13-18 at $1.00.</div>
+      <div>Carry-overs and birdie doubles still apply. A carry-over crossing into a new tier uses the new tier dollar amount.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">📊 Stable Stakes</div>
+    <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.6;">
+      A points-based game using the Stableford scoring system. Players earn points based on their score relative to par on each hole. The player with the most points at the end wins.
+    </div>
+    <div style="font-size:15px;font-weight:700;color:var(--text2);margin-top:12px;line-height:1.6;">
+      <div style="margin-bottom:6px;"><span style="color:var(--green);font-weight:900;">Eagle or better:</span> 4 points</div>
+      <div style="margin-bottom:6px;"><span style="color:var(--green);font-weight:900;">Birdie:</span> 3 points</div>
+      <div style="margin-bottom:6px;"><span style="color:var(--green);font-weight:900;">Par:</span> 2 points</div>
+      <div style="margin-bottom:6px;"><span style="color:var(--green);font-weight:900;">Bogey:</span> 1 point</div>
+      <div><span style="color:var(--green);font-weight:900;">Double bogey or worse:</span> 0 points</div>
+    </div>
+  </div>
+
+  <div class="card" style="background:var(--green-light);border:2px solid var(--green);">
+    <div style="font-size:18px;font-weight:900;color:var(--green);margin-bottom:8px;">Playing Together</div>
+    <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.6;">
+      <div style="margin-bottom:8px;">One player starts the game and gets a room code. Share that code with your playing partners. Each player enters the code to join and can enter their own scores on their own phone.</div>
+      <div>Players can join mid-round. The host can also add players and adjust game settings during the round.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RULES POPUP MODAL -->
+<div class="overlay" id="rules-overlay">
+  <div class="scorecard-modal">
+    <div class="sc-title"><span id="rules-title">Rules</span><span class="sc-close" onclick="document.getElementById('rules-overlay').classList.remove('active')">✕</span></div>
+    <div id="rules-content" style="padding:16px;font-size:17px;font-weight:700;color:var(--text);line-height:1.7;"></div>
+    <button class="btn primary" style="margin:0 16px 16px;" onclick="document.getElementById('rules-overlay').classList.remove('active')">got it</button>
+  </div>
+</div>
+
 <!-- COURSES -->
 <div id="courses" class="screen">
   <div class="top-bar">
@@ -677,7 +754,7 @@ async function saveCompletedGame(gameData){
   await purgeOldGames();
 }
 async function purgeOldGames(){
-  const cutoff = Date.now() - (48*60*60*1000);
+  const cutoff = Date.now() - (30*24*60*60*1000);
   try{
     const snap = await get(ref(db,'completed_games'));
     if(!snap.val()) return;
@@ -700,12 +777,23 @@ window.showPastGames = async function(){
     row.className = 'past-game-row';
     row.onclick = function(){ loadPastGame(id); };
     const courseLine = g.courseName ? g.courseName+' · ' : '';
-    row.innerHTML = '<div style="font-size:18px;font-weight:800">'+(g.players||[]).join(', ')+'</div>'
+    row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+      +'<div style="flex:1;">'
+      +'<div style="font-size:18px;font-weight:800">'+(g.players||[]).join(', ')+'</div>'
       +'<div style="font-size:15px;color:var(--green);font-weight:700">'+courseLine+(g.holes||9)+' holes · $'+(g.bet||1)+'/hole</div>'
-      +'<div style="font-size:14px;color:var(--text2);font-weight:700">📅 '+date+' at '+time+'</div>';
+      +'<div style="font-size:14px;color:var(--text2);font-weight:700">📅 '+date+' at '+time+'</div>'
+      +'</div>'
+      +'<button onclick="deletePastGame(\''+id+'\',event)" style="margin-left:12px;padding:10px 14px;font-size:18px;font-weight:900;background:#ffe8e8;border:2px solid #b30000;border-radius:10px;color:#b30000;cursor:pointer;white-space:nowrap;flex-shrink:0;">🗑 delete</button>'
+      +'</div>';
     el.appendChild(row);
   });
   document.getElementById('past-game-overlay').classList.add('active');
+};
+window.deletePastGame = async function(id, e){
+  e.stopPropagation();
+  if(!confirm('Delete this game? This cannot be undone.')) return;
+  await remove(ref(db,'completed_games/'+id));
+  showPastGames();
 };
 window.loadPastGame = async function(id){
   const snap = await get(ref(db,'completed_games/'+id));
@@ -713,7 +801,11 @@ window.loadPastGame = async function(id){
   const g = snap.val();
   // Load game data into G for rendering
   const saved = {...G};
-  G.players=g.players||[]; G.holes=g.holes||9; G.pars=g.pars||[]; G.bet=g.bet||1; G.hon=g.hon||0; G.scores=g.scores||[]; G.editedCells=g.editedCells||{};
+  G.players=g.players||[]; G.holes=g.holes||9; G.pars=g.pars||[]; G.bet=g.bet||1; G.hon=g.hon||0;
+  G.carryovers=g.carryovers!==undefined?g.carryovers:true;
+  G.birdieDoubles=g.birdieDoubles!==undefined?g.birdieDoubles:true;
+  G.back9doubles=g.back9doubles||false; G.escalating=g.escalating||false; G.escBet=g.escBet||[1,1,1];
+  G.scores=g.scores||[]; G.editedCells=g.editedCells||{};
   G._pastGameMeta={courseName:g.courseName||'',completedAt:g.completedAt};
   renderScorecard();
   // Restore G
@@ -734,6 +826,22 @@ window.showScreen = function(id){
 window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setBet=function(n,el){ G.bet=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setEsc=function(tier,val,el){ G.escBet[tier]=val; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.showRules=function(mode){
+  const titles={
+    buckskins:'💰 Buck Skins',
+    back9doubles:'2️⃣ Back 9 Doubles',
+    escalating:'📈 Escalating Stakes'
+  };
+  const rules={
+    buckskins:'Best score on a hole wins that hole's pot from every other player. Ties mean nobody wins. Turn on Carry-Overs to stack tied holes. Turn on Birdie Doubles to double the pot when a birdie wins.',
+    back9doubles:'Same as Buck Skins but every hole on the back 9 is automatically worth double. Set your front 9 bet and the back 9 doubles itself.',
+    escalating:'The bet increases every 6 holes. You set the dollar amount for holes 1-6, 7-12, and 13-18 separately. Carry-overs crossing into a new tier use the new tier value.'
+  };
+  document.getElementById('rules-title').textContent=titles[mode]||'Rules';
+  document.getElementById('rules-content').textContent=rules[mode]||'';
+  document.getElementById('rules-overlay').classList.add('active');
+};
+
 window.selectBSMode=function(screen){
   G.back9doubles=screen==='back9doubles-home';
   G.escalating=screen==='escalating-home';
@@ -744,18 +852,18 @@ window.selectBSMode=function(screen){
 };
 
 window.onB9CourseChange=function(){
-  const idx=document.getElementById('b9-course-select').value;
-  if(idx==='') return;
-  const c=getCourses()[parseInt(idx)];
+  const sel=document.getElementById('b9-course-select');
+  if(sel.value==='') return;
+  const c=getCourses()[parseInt(sel.value)];
   G.holes=c.holes; G.pars=[...c.pars];
-  document.querySelectorAll('#b9-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
+  sel.closest('.card').querySelectorAll('#b9-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
 };
 window.onEscCourseChange=function(){
-  const idx=document.getElementById('esc-course-select').value;
-  if(idx==='') return;
-  const c=getCourses()[parseInt(idx)];
+  const sel=document.getElementById('esc-course-select');
+  if(sel.value==='') return;
+  const c=getCourses()[parseInt(sel.value)];
   G.holes=c.holes; G.pars=[...c.pars];
-  document.querySelectorAll('#esc-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
+  sel.closest('.card').querySelectorAll('#esc-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
 };
 
 window.toggleOpt=function(key,el){
@@ -818,7 +926,10 @@ async function renderPlayerInputs(containerId){
 }
 window.pickSuggestion=function(i,name){
   G.players[i]=name;
-  const inputs=document.querySelectorAll('#players-inputs input');
+  const activeScreen=document.querySelector('.screen.active');
+  const sid=activeScreen?activeScreen.id:'buckskins-home';
+  const piId=sid==='back9doubles-home'?'b9-players-inputs':sid==='escalating-home'?'esc-players-inputs':'players-inputs';
+  const inputs=document.querySelectorAll('#'+piId+' input');
   if(inputs[i]) inputs[i].value=name;
   document.querySelectorAll('.player-suggestions').forEach(s=>s.style.display='none');
 };
@@ -898,7 +1009,12 @@ window.joinAsNewPlayer=async function(){
   document.getElementById('name-picker').style.display='none';
   // Add player to Firebase players array
   const players=[...(game.players||[]), name];
-  const scores=(game.scores||[]).map(row=>[...(row||[]),'']);
+  const currentH=game.currentHole||0;
+  const scores=(game.scores||[]).map((row,h)=>{
+    const wasPlayed=h<currentH;
+    const par=(game.pars&&game.pars[h])||4;
+    return [...(row||[]), wasPlayed?(par+10):''];
+  });
   await update(ref(db,'games/'+code),{players, scores});
   const updatedGame={...game, players, scores};
   await _doJoin(code, updatedGame, players, players.length-1, name);
@@ -915,7 +1031,14 @@ window.addPlayerMidGame=async function(){
   const name=document.getElementById('add-player-name').value.trim();
   if(!name){ alert('Enter a name'); return; }
   const players=[...G.players, name];
-  const scores=G.scores.map(row=>[...row,'']);
+  // Fill already-played holes with a losing score (par+10) so past holes still calculate correctly
+  // Current hole and future holes get blank so the new player can enter their own scores
+  const currentH=G.currentHole;
+  const scores=G.scores.map((row,h)=>{
+    const wasPlayed=h<currentH;
+    const par=G.pars[h]||4;
+    return [...row, wasPlayed?(par+10):''];
+  });
   G.players=players; G.scores=scores;
   await update(ref(db,'games/'+G.roomCode),{players, scores});
   await saveKnownPlayer(name);
@@ -978,8 +1101,8 @@ function listenGame(){
     G.myIdx=G.myName?G.players.findIndex(p=>normName(p)===normName(G.myName)):G.myIdx;
     G.scores=g.scores||G.scores; G.currentHole=g.currentHole||0; G.editedCells=g.editedCells||{};
     // Only re-render hole if the hole number changed or players changed - avoid double render with listenScoring
-    if(game.carryovers!==undefined && game.carryovers!==G.carryovers){ G.carryovers=game.carryovers; }
-    if(game.birdieDoubles!==undefined && game.birdieDoubles!==G.birdieDoubles){ G.birdieDoubles=game.birdieDoubles; }
+    if(g.carryovers!==undefined && g.carryovers!==G.carryovers){ G.carryovers=g.carryovers; }
+    if(g.birdieDoubles!==undefined && g.birdieDoubles!==G.birdieDoubles){ G.birdieDoubles=g.birdieDoubles; }
     if(holeChanged) renderHole();
   });
 }
@@ -1200,10 +1323,11 @@ function renderHoleResult(){
   const {pot,honorsHolder}=stateAtHole(h);
   const nums=s.map(Number), min=Math.min(...nums);
   const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
-  const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&min<=(par-1);
+  const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
   const finalPot=isBirdie?pot*2:pot, n=dp.length;
   let html='';
-  if(isTie) html+='<span class="badge gray" style="font-size:18px">tie — '+fmt(G.bet)+' carries over</span>';
+  const hbetDisplay=getHoleBet(h);
+  if(isTie) html+='<span class="badge gray" style="font-size:18px">'+(G.carryovers?'tie — '+fmt(hbetDisplay)+' carries over':'tie — no carry-over')+'</span>';
   else{
     const totalWin=finalPot*(n-1);
     html+='<span class="badge green" style="font-size:18px">🏆 '+escH(dp[winners[0]])+' wins '+fmt(totalWin)+(isBirdie?' 🐦 birdie!':'')+'</span>';
@@ -1322,14 +1446,7 @@ function renderScorecard(){
   thead.innerHTML=headHTML;
   tbl.appendChild(thead);
 
-  // Par row
   const tbody=document.createElement('tbody');
-  let parHTML='<tr style="background:#f0f0f0"><td style="padding:6px 8px;font-size:14px;font-weight:900;color:var(--blue);border:2px solid #999;text-align:left;position:sticky;left:0;background:#f0f0f0;z-index:2">PAR</td>';
-  played.forEach(e=>{
-    parHTML+='<td style="padding:6px 4px;font-size:16px;font-weight:800;text-align:center;border:2px solid #999;color:var(--blue)">'+( e.par||4)+'</td>';
-  });
-  parHTML+='</tr>';
-  tbody.innerHTML=parHTML;
 
   // Hole colors
   const holeColors=[
@@ -1515,7 +1632,10 @@ window.endGame=async function(){
   // Save completed game including course name and timestamp
   const courseEl=document.getElementById('course-select');
   const courseName=courseEl&&courseEl.selectedIndex>0?courseEl.options[courseEl.selectedIndex].text:'';
-  const gameData={ players:G.players, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon, scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName };
+  const gameData={ players:G.players, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon,
+    carryovers:G.carryovers, birdieDoubles:G.birdieDoubles, back9doubles:G.back9doubles,
+    escalating:G.escalating, escBet:G.escBet,
+    scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName };
   await saveCompletedGame(gameData);
   buildResults('final-results','final-net-grid','final-payouts');
   showScreen('final-results');
@@ -1619,8 +1739,8 @@ function ssGetDisplayPlayers(){ return (SS.players||[]).filter(p=>p&&String(p).t
 function ssIsMissing(v){ return v===''||v===null||v===undefined||String(v).trim()===''||isNaN(Number(v)); }
 
 // Setup
-window.ssSetHoles=function(n,el){ SS.holes=n; SS.pars=Array(n).fill(4); document.querySelectorAll('#ss-hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
-window.ssSetBet=function(n,el){ SS.bet=n; document.querySelectorAll('#ss-bet-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.ssSetHoles=function(n,el){ SS.holes=n; SS.pars=Array(n).fill(4); el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.ssSetBet=function(n,el){ SS.bet=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.ssOnCourseChange=function(){
   const idx=document.getElementById('ss-course-select').value;
   if(idx==='') return;
