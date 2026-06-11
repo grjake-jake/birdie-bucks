@@ -1094,16 +1094,13 @@ function renderScorecard(){
 
   // ── SETTLE UP ──
   const debts=[];
-  const bal=net.map((v,i)=>({i,v}));
-  const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
-  const neg2=bal.filter(x=>x.v<-0.005).sort((a,b)=>a.v-b.v);
-  let pi2=0,ni=0;
-  while(pi2<pos2.length&&ni<neg2.length){
-    const amt=Math.min(pos2[pi2].v,-neg2[ni].v);
-    debts.push({from:neg2[ni].i,to:pos2[pi2].i,amt});
-    pos2[pi2].v-=amt; neg2[ni].v+=amt;
-    if(Math.abs(pos2[pi2].v)<0.005)pi2++;
-    if(Math.abs(neg2[ni].v)<0.005)ni++;
+  const winPerPlayer=holeWon.map((hw,i)=>hw+(honWon[i]||0));
+  for(let payer=0;payer<n;payer++){
+    for(let payee=0;payee<n;payee++){
+      if(payer===payee) continue;
+      const amt=winPerPlayer[payee]-winPerPlayer[payer];
+      if(amt>0.005) debts.push({from:payer,to:payee,amt});
+    }
   }
 
   const settleHdr=document.createElement('div');
@@ -1220,16 +1217,13 @@ function buildResults(screenId,netId,payId){
     ng.appendChild(div);
   });
   const debts=[];
-  const bal=net.map((v,i)=>({i,v}));
-  const pos2=bal.filter(x=>x.v>0.005).sort((a,b)=>b.v-a.v);
-  const neg2=bal.filter(x=>x.v<-0.005).sort((a,b)=>a.v-b.v);
-  let pi=0,ni=0;
-  while(pi<pos2.length&&ni<neg2.length){
-    const amt=Math.min(pos2[pi].v,-neg2[ni].v);
-    debts.push({from:neg2[ni].i,to:pos2[pi].i,amt});
-    pos2[pi].v-=amt; neg2[ni].v+=amt;
-    if(Math.abs(pos2[pi].v)<0.005)pi++;
-    if(Math.abs(neg2[ni].v)<0.005)ni++;
+  const winPP=holeWon.map((hw,i)=>hw+(honWon[i]||0));
+  for(let payer=0;payer<n;payer++){
+    for(let payee=0;payee<n;payee++){
+      if(payer===payee) continue;
+      const amt=winPP[payee]-winPP[payer];
+      if(amt>0.005) debts.push({from:payer,to:payee,amt});
+    }
   }
   const pd=document.getElementById(payId); pd.innerHTML='';
   if(!debts.length) pd.innerHTML='<div class="card" style="text-align:center;color:var(--green);font-size:22px;font-weight:900">all square! 🤝</div>';
