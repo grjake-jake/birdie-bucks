@@ -732,8 +732,8 @@ window.showScreen = function(id){
   if(id==='stablestakes-home') ssRefreshHome();
 };
 window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); document.querySelectorAll('#hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
-window.setBet=function(n,el){ G.bet=n; document.querySelectorAll('#bet-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
-window.setEsc=function(tier,val,el){ G.escBet[tier]=val; document.querySelectorAll('#esc-chips-'+tier+' .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setBet=function(n,el){ G.bet=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setEsc=function(tier,val,el){ G.escBet[tier]=val; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.selectBSMode=function(screen){
   G.back9doubles=screen==='back9doubles-home';
   G.escalating=screen==='escalating-home';
@@ -763,7 +763,7 @@ window.toggleOpt=function(key,el){
   el.textContent=G[keyMap[key]]?'ON':'OFF';
   el.classList.toggle('on',G[keyMap[key]]);
 };
-window.setHon=function(n,el){ G.hon=n; document.querySelectorAll('#hon-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setHon=function(n,el){ G.hon=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.onCourseChange=function(){
   const idx=document.getElementById('course-select').value;
   if(idx==='') return;
