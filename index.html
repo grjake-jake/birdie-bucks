@@ -469,7 +469,10 @@ select.inp{color:var(--text);}
     <div class="card">
       <div style="font-size:18px;font-weight:800;margin-bottom:10px;color:var(--text2)">pick your name from the list:</div>
       <div id="name-picker-list"></div>
-      <div style="margin-top:10px"><button class="btn outline btn-sm" onclick="joinAsSpectator()">join as spectator (view only)</button></div>
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        <button class="btn primary" onclick="joinAsNewPlayer()">add me as a new player</button>
+        <button class="btn outline" onclick="joinAsSpectator()">join as spectator (view only)</button>
+      </div>
     </div>
   </div>
 </div>
@@ -525,6 +528,32 @@ select.inp{color:var(--text);}
   <div style="display:flex;gap:12px;margin-bottom:10px;">
     <button class="btn outline" style="flex:1;margin-bottom:0;font-size:18px" onclick="showScorecard()">📋 scorecard</button>
     <button class="btn primary" style="flex:1;margin-bottom:0;font-size:18px" onclick="showResults()">💰 results</button>
+  </div>
+  <div id="host-settings-bar" style="display:none;background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;">
+    <div style="font-size:15px;font-weight:900;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">host settings</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">carry-overs</span>
+        <button id="mid-tog-carryovers" class="tog-btn on" onclick="midGameToggle('carryovers',this)">ON</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">birdie doubles</span>
+        <button id="mid-tog-birdiedoubles" class="tog-btn on" onclick="midGameToggle('birdieDoubles',this)">ON</button>
+      </div>
+      <button class="btn outline" style="margin-bottom:0;font-size:16px;padding:10px;" onclick="showAddPlayerModal()">+ add player mid-game</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PLAYER MID-GAME MODAL -->
+<div class="overlay" id="add-player-overlay">
+  <div class="scorecard-modal">
+    <div class="sc-title"><span>+ add player</span><span class="sc-close" onclick="document.getElementById('add-player-overlay').classList.remove('active')">✕</span></div>
+    <div class="card">
+      <span class="field-label">player name</span>
+      <input class="inp" id="add-player-name" placeholder="Enter name">
+    </div>
+    <button class="btn primary" onclick="addPlayerMidGame()">add to game →</button>
   </div>
 </div>
 
@@ -860,6 +889,48 @@ window.joinAsPicker=async function(code,idx){
   document.getElementById('name-picker').style.display='none';
   await _doJoin(code, game, players, idx, players[idx]);
 };
+window.joinAsNewPlayer=async function(){
+  const code=window._pendingJoinCode, game=window._pendingJoinGame;
+  const name=document.getElementById('join-name').value.trim();
+  if(!name){ alert('Enter your name first'); return; }
+  document.getElementById('name-picker').style.display='none';
+  // Add player to Firebase players array
+  const players=[...(game.players||[]), name];
+  const scores=(game.scores||[]).map(row=>[...(row||[]),'']);
+  await update(ref(db,'games/'+code),{players, scores});
+  const updatedGame={...game, players, scores};
+  await _doJoin(code, updatedGame, players, players.length-1, name);
+  await saveKnownPlayer(name);
+};
+
+window.showAddPlayerModal=function(){
+  document.getElementById('add-player-overlay').classList.add('active');
+  document.getElementById('add-player-name').value='';
+  setTimeout(()=>document.getElementById('add-player-name').focus(),100);
+};
+
+window.addPlayerMidGame=async function(){
+  const name=document.getElementById('add-player-name').value.trim();
+  if(!name){ alert('Enter a name'); return; }
+  const players=[...G.players, name];
+  const scores=G.scores.map(row=>[...row,'']);
+  G.players=players; G.scores=scores;
+  await update(ref(db,'games/'+G.roomCode),{players, scores});
+  await saveKnownPlayer(name);
+  document.getElementById('add-player-overlay').classList.remove('active');
+  renderHole();
+};
+
+window.midGameToggle=async function(key,el){
+  G[key]=!G[key];
+  el.textContent=G[key]?'ON':'OFF';
+  el.classList.toggle('on',G[key]);
+  // Save to Firebase so all players recalculate
+  await update(ref(db,'games/'+G.roomCode),{[key]:G[key]});
+  renderHole();
+  renderHoleResult();
+};
+
 window.joinAsSpectator=async function(){
   const code=window._pendingJoinCode, game=window._pendingJoinGame, players=window._pendingJoinPlayers;
   document.getElementById('name-picker').style.display='none';
@@ -905,6 +976,8 @@ function listenGame(){
     G.myIdx=G.myName?G.players.findIndex(p=>normName(p)===normName(G.myName)):G.myIdx;
     G.scores=g.scores||G.scores; G.currentHole=g.currentHole||0; G.editedCells=g.editedCells||{};
     // Only re-render hole if the hole number changed or players changed - avoid double render with listenScoring
+    if(game.carryovers!==undefined && game.carryovers!==G.carryovers){ G.carryovers=game.carryovers; }
+    if(game.birdieDoubles!==undefined && game.birdieDoubles!==G.birdieDoubles){ G.birdieDoubles=game.birdieDoubles; }
     if(holeChanged) renderHole();
   });
 }
@@ -1039,6 +1112,15 @@ function renderHole(){
     si.appendChild(div);
   });
   renderHoleResult(); highlightWinners(); renderLiveScores(); checkMissingScores();
+  // Host settings bar
+  const hsb=document.getElementById('host-settings-bar');
+  if(hsb){
+    hsb.style.display=G.isHost?'block':'none';
+    const mc=document.getElementById('mid-tog-carryovers');
+    const mb=document.getElementById('mid-tog-birdiedoubles');
+    if(mc){ mc.textContent=G.carryovers?'ON':'OFF'; mc.classList.toggle('on',G.carryovers); }
+    if(mb){ mb.textContent=G.birdieDoubles?'ON':'OFF'; mb.classList.toggle('on',G.birdieDoubles); }
+  }
 }
 
 window._advanceFocus=function(currentIdx, totalPlayers){
