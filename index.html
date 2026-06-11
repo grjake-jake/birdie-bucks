@@ -152,6 +152,8 @@ select.inp{color:var(--text);}
 .net-card{border-radius:var(--radius);padding:16px;border:3px solid;}
 .net-card.pos{background:var(--green-light);border-color:var(--green);}
 .net-card.neg{background:var(--red-light);border-color:var(--red);}
+.tog-btn{padding:8px 22px;font-size:17px;font-weight:900;border-radius:30px;border:3px solid var(--border2);background:var(--card-bg);color:var(--text2);cursor:pointer;transition:all .2s;}
+.tog-btn.on{background:var(--green);color:#fff;border-color:var(--green);}
 .owes-row{background:#ffe8e8;border:4px solid #b30000;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
 .section-hd{font-size:15px;font-weight:900;color:var(--text2);letter-spacing:.6px;text-transform:uppercase;margin:16px 0 10px;}
 .par-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
@@ -536,6 +538,17 @@ window.showScreen = function(id){
 };
 window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); document.querySelectorAll('#hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setBet=function(n,el){ G.bet=n; document.querySelectorAll('#bet-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setEsc=function(tier,val,el){ G.escBet[tier]=val; document.querySelectorAll('#esc-chips-'+tier+' .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.toggleOpt=function(key,el){
+  const keyMap={carryovers:'carryovers',birdieDoubles:'birdieDoubles',back9doubles:'back9doubles',escalating:'escalating'};
+  G[keyMap[key]]=!G[keyMap[key]];
+  el.textContent=G[keyMap[key]]?'ON':'OFF';
+  el.classList.toggle('on',G[keyMap[key]]);
+  if(key==='escalating'){
+    document.getElementById('escalating-setup').style.display=G.escalating?'block':'none';
+    document.getElementById('base-bet-section').style.display=G.escalating?'none':'block';
+  }
+};
 window.setHon=function(n,el){ G.hon=n; document.querySelectorAll('#hon-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.onCourseChange=function(){
   const idx=document.getElementById('course-select').value;
@@ -604,6 +617,8 @@ window.hostGame=async function(){
   for(const n of names) await saveKnownPlayer(n);
   await set(ref(db,'games/'+G.roomCode),{
     players:names, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon,
+    carryovers:G.carryovers, birdieDoubles:G.birdieDoubles, back9doubles:G.back9doubles,
+    escalating:G.escalating, escBet:G.escBet,
     mode:'singles', scores:G.scores, editedCells:{}, currentHole:0, status:'lobby', created:Date.now()
   });
   document.getElementById('lobby-code').textContent=G.roomCode;
@@ -662,7 +677,13 @@ window.joinAsSpectator=async function(){
 async function _doJoin(code, game, players, myIdx, myName){
   G.roomCode=code; G.isHost=false; G.myName=myName; G.myIdx=myIdx;
   G.holes=game.holes; G.pars=game.pars||Array(game.holes).fill(4);
-  G.bet=game.bet||1; G.hon=game.hon||0; G.players=players;
+  G.bet=game.bet||1; G.hon=game.hon||0;
+  G.carryovers=game.carryovers!==undefined?game.carryovers:true;
+  G.birdieDoubles=game.birdieDoubles!==undefined?game.birdieDoubles:true;
+  G.back9doubles=game.back9doubles||false;
+  G.escalating=game.escalating||false;
+  G.escBet=game.escBet||[1,1,1];
+  G.players=players;
   G.scores=game.scores||Array(G.holes).fill(null).map(()=>Array(players.length).fill(''));
   G.currentHole=game.currentHole||0; G.editedCells=game.editedCells||{};
   document.getElementById('scoring-room-code').textContent=code;
@@ -723,15 +744,29 @@ function listenScoring(){
 }
 
 // ── SCORING CALC ─────────────────────────────────────────────────────────────
+function getHoleBet(h){
+  // h is 0-indexed
+  let base;
+  if(G.escalating){
+    const tier=h<6?0:(h<12?1:2);
+    base=G.escBet[tier];
+  } else {
+    base=G.bet;
+  }
+  if(G.back9doubles && h>=9) base*=2;
+  return base;
+}
 function stateAtHole(h){
-  let pot=G.bet, hh=-1;
+  let pot=getHoleBet(0), hh=-1;
   for(let i=0;i<h;i++){
+    const hbet=getHoleBet(i);
     const s=G.scores[i];
-    if(!s||!s.every(v=>!isMissing(v))){ pot+=G.bet; continue; }
+    if(!s||!s.every(v=>!isMissing(v))){ if(G.carryovers) pot+=hbet; else pot=getHoleBet(i+1<G.holes?i+1:i); continue; }
     const nums=s.map(Number), min=Math.min(...nums);
     const winners=nums.reduce((a,v,j)=>{ if(v===min)a.push(j); return a; },[]);
-    const isTie=winners.length>1, par=G.pars[i]||4, isBirdie=!isTie&&min<=(par-1);
-    if(!isTie){ if(isBirdie) pot*=2; pot=G.bet; } else { pot+=G.bet; }
+    const isTie=winners.length>1, par=G.pars[i]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
+    if(!isTie){ if(isBirdie) pot*=2; pot=getHoleBet(i+1<G.holes?i+1:i); }
+    else { if(G.carryovers) pot+=hbet; else pot=getHoleBet(i+1<G.holes?i+1:i); }
     if(hh===-1){ if(!isTie) hh=winners[0]; }
     else{ if(min<nums[hh]&&!isTie) hh=winners[0]; }
   }
@@ -741,21 +776,22 @@ function calcFull(){
   const dp=getDisplayPlayers(), n=dp.length;
   const net=Array(n).fill(0), holeWon=Array(n).fill(0), honWon=Array(n).fill(0);
   const log=[];
-  let pot=G.bet, hh=-1;
+  let pot=getHoleBet(0), hh=-1;
   for(let h=0;h<G.holes;h++){
+    const hbet=getHoleBet(h);
     const s=G.scores[h];
     const filled=s&&s.every(v=>!isMissing(v));
-    if(!filled){ pot+=G.bet; log.push({h,skipped:true,honorsHolder:hh}); continue; }
+    if(!filled){ if(G.carryovers) pot+=hbet; else pot=getHoleBet(h+1<G.holes?h+1:h); log.push({h,skipped:true,honorsHolder:hh}); continue; }
     const nums=s.map(Number), min=Math.min(...nums);
     const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
-    const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&min<=(par-1);
+    const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
     let finalPot=isBirdie?pot*2:pot;
-    const entry={h,isTie,isBirdie,holeWinner:isTie?-1:winners[0],finalPot,honorsHolder:hh,scores:[...nums],par};
+    const entry={h,isTie,isBirdie,holeWinner:isTie?-1:winners[0],finalPot,honorsHolder:hh,scores:[...nums],par,hbet};
     if(!isTie){
       const w=winners[0];
       for(let i=0;i<n;i++){ if(i!==w){ net[i]-=finalPot; net[w]+=finalPot; holeWon[w]+=finalPot; } }
-      pot=G.bet;
-    } else { pot+=G.bet; }
+      pot=getHoleBet(h+1<G.holes?h+1:h);
+    } else { if(G.carryovers) pot+=hbet; else pot=getHoleBet(h+1<G.holes?h+1:h); }
     let newHH=hh;
     if(hh===-1){
       if(!isTie){
@@ -785,7 +821,12 @@ function renderHole(){
   document.getElementById('prog-fill').style.width=Math.round(((h+1)/G.holes)*100)+'%';
   document.getElementById('prev-btn').disabled=h===0;
   document.getElementById('next-btn').disabled=h===G.holes-1;
-  document.getElementById('double-badge').style.display=pot>G.bet?'':'none';
+  const hbet=getHoleBet(h);
+  const potBadge=document.getElementById('double-badge');
+  if(pot>hbet){ potBadge.style.display=''; potBadge.textContent='pot: '+fmt(pot)+' each'; }
+  else if(G.back9doubles&&h>=9){ potBadge.style.display=''; potBadge.textContent='hole value: '+fmt(hbet)+' each'; }
+  else if(G.escalating){ potBadge.style.display=''; potBadge.textContent='hole value: '+fmt(hbet)+' each'; }
+  else { potBadge.style.display='none'; }
   const hBar=document.getElementById('honors-bar');
   if(G.hon>0){
     hBar.style.display='';
@@ -1074,7 +1115,8 @@ function renderScorecard(){
       const carryTd=document.createElement('td');
       carryTd.colSpan=n;
       carryTd.style.cssText='padding:6px;text-align:center;font-size:15px;font-weight:900;color:var(--gold);border:2px solid #999';
-      carryTd.textContent='⏩ CARRY OVER — next pot: '+fmt(e.finalPot+G.bet)+' each';
+      const nextHbet=getHoleBet(e.h+1<G.holes?e.h+1:e.h);
+      carryTd.textContent='⏩ CARRY OVER — next pot: '+fmt(e.finalPot+nextHbet)+' each';
       resultTr.appendChild(carryTd);
     } else {
       dp.forEach((_,pi)=>{
@@ -1147,7 +1189,8 @@ function renderScorecard(){
       let lines=[];
 
       if(e.isTie){
-        lines.push('Tie — pot carries to '+fmt(e.finalPot+G.bet)+' each');
+        const nbhet=getHoleBet(e.h+1<G.holes?e.h+1:e.h);
+        lines.push('Tie — pot carries to '+fmt(e.finalPot+nbhet)+' each');
         if(G.hon>0&&e.honorsHolder>=0){
           lines.push(dp[e.honorsHolder]+' holds honors — wins '+fmt(G.hon)+' from each');
         }
