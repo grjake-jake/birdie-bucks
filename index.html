@@ -731,13 +731,15 @@ window.showScreen = function(id){
   if(id==='courses') refreshCourseList();
   if(id==='stablestakes-home') ssRefreshHome();
 };
-window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); document.querySelectorAll('#hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setBet=function(n,el){ G.bet=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setEsc=function(tier,val,el){ G.escBet[tier]=val; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.selectBSMode=function(screen){
   G.back9doubles=screen==='back9doubles-home';
   G.escalating=screen==='escalating-home';
   if(G.back9doubles||G.escalating){ G.carryovers=true; G.birdieDoubles=true; }
+  G.bet=1;
+  if(G.escalating) G.escBet=[0.25,1,2];
   showScreen(screen);
 };
 
