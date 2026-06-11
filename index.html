@@ -234,17 +234,44 @@ select.inp{color:var(--text);}
       </svg>
     </div>
   </div>
-  <button class="game-btn" onclick="showScreen('buckskins-home')"><span class="game-icon">💰</span>Buck Skins<span class="game-arrow">›</span></button>
+  <button class="game-btn" onclick="showScreen('buckskins-mode')"><span class="game-icon">💰</span>Buck Skins<span class="game-arrow">›</span></button>
   <button class="game-btn" onclick="showScreen('stablestakes-home')"><span class="game-icon">📊</span>Stable Stakes<span class="game-arrow">›</span></button>
   <button class="game-btn coming-soon"><span class="game-icon">🐺</span>Wolf Wagers <span class="coming-soon-tag">coming soon</span><span class="game-arrow">›</span></button>
   <button class="btn outline" style="margin-top:4px" onclick="showPastGames()">📋 last game played</button>
 </div>
 
-<!-- BUCKSKINS HOME -->
-<div id="buckskins-home" class="screen">
+<!-- BUCKSKINS MODE SELECT -->
+<div id="buckskins-mode" class="screen">
   <div class="top-bar">
     <button class="btn sm" onclick="showScreen('main-home')">← back</button>
     <div><div class="app-title" style="font-size:20px">💰 Buck Skins</div><div class="app-sub">Birdie Bucks</div></div>
+    <div style="width:80px"></div>
+  </div>
+  <div style="padding:8px 0 4px;font-size:15px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">select game mode</div>
+  <button class="game-btn" onclick="selectBSMode('buckskins-home')">
+    <span class="game-icon">💰</span>
+    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Buck Skins</div><div style="font-size:14px;font-weight:700;color:var(--text2);">flat bet per hole</div></div>
+    <span class="game-arrow">›</span>
+  </button>
+  <button class="game-btn" onclick="selectBSMode('back9doubles-home')">
+    <span class="game-icon">2️⃣</span>
+    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Back 9 Doubles</div><div style="font-size:14px;font-weight:700;color:var(--text2);">back 9 hole value doubles</div></div>
+    <span class="game-arrow">›</span>
+  </button>
+  <button class="game-btn" onclick="selectBSMode('escalating-home')">
+    <span class="game-icon">📈</span>
+    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Escalating Stakes</div><div style="font-size:14px;font-weight:700;color:var(--text2);">bet increases every 6 holes</div></div>
+    <span class="game-arrow">›</span>
+  </button>
+  <div class="divider">— or —</div>
+  <button class="btn outline" onclick="showScreen('join')">join existing game</button>
+</div>
+
+<!-- BUCK SKINS SETUP -->
+<div id="buckskins-home" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('buckskins-mode')">← back</button>
+    <div><div class="app-title" style="font-size:20px">💰 Buck Skins</div><div class="app-sub">flat bet per hole</div></div>
     <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
   </div>
   <div class="card">
@@ -274,14 +301,153 @@ select.inp{color:var(--text);}
       <div class="chip on" onclick="setHon(1,this)">$1</div>
       <div class="chip" onclick="setHon(2,this)">$2</div>
     </div>
+    <span class="field-label">options</span>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">carry-overs</span>
+        <button id="bs-tog-carryovers" class="tog-btn on" onclick="toggleOpt('carryovers',this)">ON</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">birdie doubles</span>
+        <button id="bs-tog-birdiedoubles" class="tog-btn on" onclick="toggleOpt('birdieDoubles',this)">ON</button>
+      </div>
+    </div>
   </div>
   <div class="card">
-    <span class="field-label">players (enter yours + up to 3 others, or just yours and share the code)</span>
+    <span class="field-label">players</span>
     <div id="players-inputs"></div>
   </div>
   <button class="btn primary" onclick="hostGame()">start game &amp; get room code →</button>
-  <div class="divider">— or —</div>
-  <button class="btn outline" onclick="showScreen('join')">join existing game</button>
+</div>
+
+<!-- BACK 9 DOUBLES SETUP -->
+<div id="back9doubles-home" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('buckskins-mode')">← back</button>
+    <div><div class="app-title" style="font-size:20px">2️⃣ Back 9 Doubles</div><div class="app-sub">back 9 value doubles</div></div>
+    <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
+  </div>
+  <div class="card">
+    <span class="field-label">course</span>
+    <select class="inp" id="b9-course-select" onchange="onB9CourseChange()"><option value="">-- select course --</option></select>
+    <span class="field-label">holes</span>
+    <div class="chip-row" id="b9-hole-chips">
+      <div class="chip on" onclick="setHoles(9,this)">9 holes</div>
+      <div class="chip" onclick="setHoles(18,this)">18 holes</div>
+    </div>
+    <span class="field-label">front 9 hole bet</span>
+    <div class="chip-row" id="b9-bet-chips">
+      <div class="chip" onclick="setBet(0.25,this)">$0.25</div>
+      <div class="chip" onclick="setBet(0.50,this)">$0.50</div>
+      <div class="chip" onclick="setBet(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setBet(1,this)">$1</div>
+      <div class="chip" onclick="setBet(2,this)">$2</div>
+      <div class="chip" onclick="setBet(5,this)">$5</div>
+      <div class="chip" onclick="setBet(10,this)">$10</div>
+    </div>
+    <div style="background:var(--card-bg);border:2px solid var(--green);border-radius:var(--radius);padding:10px 14px;margin:8px 0;font-size:15px;font-weight:800;color:var(--green);">back 9 hole bet doubles automatically</div>
+    <span class="field-label">honors bet</span>
+    <div class="chip-row" id="b9-hon-chips">
+      <div class="chip" onclick="setHon(0,this)">off</div>
+      <div class="chip" onclick="setHon(0.25,this)">$0.25</div>
+      <div class="chip" onclick="setHon(0.50,this)">$0.50</div>
+      <div class="chip" onclick="setHon(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setHon(1,this)">$1</div>
+      <div class="chip" onclick="setHon(2,this)">$2</div>
+    </div>
+    <span class="field-label">options</span>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">carry-overs</span>
+        <button id="b9-tog-carryovers" class="tog-btn on" onclick="toggleOpt('carryovers',this)">ON</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">birdie doubles</span>
+        <button id="b9-tog-birdiedoubles" class="tog-btn on" onclick="toggleOpt('birdieDoubles',this)">ON</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <span class="field-label">players</span>
+    <div id="b9-players-inputs"></div>
+  </div>
+  <button class="btn primary" onclick="hostGame()">start game &amp; get room code →</button>
+</div>
+
+<!-- ESCALATING STAKES SETUP -->
+<div id="escalating-home" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('buckskins-mode')">← back</button>
+    <div><div class="app-title" style="font-size:20px">📈 Escalating Stakes</div><div class="app-sub">bet increases every 6 holes</div></div>
+    <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
+  </div>
+  <div class="card">
+    <span class="field-label">course</span>
+    <select class="inp" id="esc-course-select" onchange="onEscCourseChange()"><option value="">-- select course --</option></select>
+    <span class="field-label">holes</span>
+    <div class="chip-row" id="esc-hole-chips">
+      <div class="chip on" onclick="setHoles(9,this)">9 holes</div>
+      <div class="chip" onclick="setHoles(18,this)">18 holes</div>
+    </div>
+    <span class="field-label">holes 1–6</span>
+    <div class="chip-row" id="esc-chips-0">
+      <div class="chip on" onclick="setEsc(0,0.25,this)">$0.25</div>
+      <div class="chip" onclick="setEsc(0,0.50,this)">$0.50</div>
+      <div class="chip" onclick="setEsc(0,0.75,this)">$0.75</div>
+      <div class="chip" onclick="setEsc(0,1,this)">$1</div>
+      <div class="chip" onclick="setEsc(0,2,this)">$2</div>
+      <div class="chip" onclick="setEsc(0,3,this)">$3</div>
+      <div class="chip" onclick="setEsc(0,5,this)">$5</div>
+      <div class="chip" onclick="setEsc(0,10,this)">$10</div>
+    </div>
+    <span class="field-label">holes 7–12</span>
+    <div class="chip-row" id="esc-chips-1">
+      <div class="chip" onclick="setEsc(1,0.25,this)">$0.25</div>
+      <div class="chip" onclick="setEsc(1,0.50,this)">$0.50</div>
+      <div class="chip" onclick="setEsc(1,0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setEsc(1,1,this)">$1</div>
+      <div class="chip" onclick="setEsc(1,2,this)">$2</div>
+      <div class="chip" onclick="setEsc(1,3,this)">$3</div>
+      <div class="chip" onclick="setEsc(1,5,this)">$5</div>
+      <div class="chip" onclick="setEsc(1,10,this)">$10</div>
+    </div>
+    <span class="field-label">holes 13–18</span>
+    <div class="chip-row" id="esc-chips-2">
+      <div class="chip" onclick="setEsc(2,0.25,this)">$0.25</div>
+      <div class="chip" onclick="setEsc(2,0.50,this)">$0.50</div>
+      <div class="chip" onclick="setEsc(2,0.75,this)">$0.75</div>
+      <div class="chip" onclick="setEsc(2,1,this)">$1</div>
+      <div class="chip on" onclick="setEsc(2,2,this)">$2</div>
+      <div class="chip" onclick="setEsc(2,3,this)">$3</div>
+      <div class="chip" onclick="setEsc(2,5,this)">$5</div>
+      <div class="chip" onclick="setEsc(2,10,this)">$10</div>
+    </div>
+    <span class="field-label">honors bet</span>
+    <div class="chip-row" id="esc-hon-chips">
+      <div class="chip" onclick="setHon(0,this)">off</div>
+      <div class="chip" onclick="setHon(0.25,this)">$0.25</div>
+      <div class="chip" onclick="setHon(0.50,this)">$0.50</div>
+      <div class="chip" onclick="setHon(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="setHon(1,this)">$1</div>
+      <div class="chip" onclick="setHon(2,this)">$2</div>
+    </div>
+    <span class="field-label">options</span>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">carry-overs</span>
+        <button id="esc-tog-carryovers" class="tog-btn on" onclick="toggleOpt('carryovers',this)">ON</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:17px;font-weight:800;color:var(--text)">birdie doubles</span>
+        <button id="esc-tog-birdiedoubles" class="tog-btn on" onclick="toggleOpt('birdieDoubles',this)">ON</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <span class="field-label">players</span>
+    <div id="esc-players-inputs"></div>
+  </div>
+  <button class="btn primary" onclick="hostGame()">start game &amp; get room code →</button>
 </div>
 
 <!-- JOIN -->
@@ -532,22 +698,41 @@ window.loadPastGame = async function(id){
 window.showScreen = function(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  if(id==='buckskins-home') refreshHome();
+  if(id==='buckskins-home'||id==='back9doubles-home'||id==='escalating-home') refreshHome(id);
   if(id==='courses') refreshCourseList();
   if(id==='stablestakes-home') ssRefreshHome();
 };
 window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); document.querySelectorAll('#hole-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setBet=function(n,el){ G.bet=n; document.querySelectorAll('#bet-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setEsc=function(tier,val,el){ G.escBet[tier]=val; document.querySelectorAll('#esc-chips-'+tier+' .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.selectBSMode=function(screen){
+  G.back9doubles=screen==='back9doubles-home';
+  G.escalating=screen==='escalating-home';
+  if(G.back9doubles||G.escalating){ G.carryovers=true; G.birdieDoubles=true; }
+  showScreen(screen);
+};
+
+window.onB9CourseChange=function(){
+  const idx=document.getElementById('b9-course-select').value;
+  if(idx==='') return;
+  const c=getCourses()[parseInt(idx)];
+  G.holes=c.holes; G.pars=[...c.pars];
+  document.querySelectorAll('#b9-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
+};
+window.onEscCourseChange=function(){
+  const idx=document.getElementById('esc-course-select').value;
+  if(idx==='') return;
+  const c=getCourses()[parseInt(idx)];
+  G.holes=c.holes; G.pars=[...c.pars];
+  document.querySelectorAll('#esc-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent)===G.holes));
+};
+
 window.toggleOpt=function(key,el){
-  const keyMap={carryovers:'carryovers',birdieDoubles:'birdieDoubles',back9doubles:'back9doubles',escalating:'escalating'};
+  const keyMap={carryovers:'carryovers',birdieDoubles:'birdieDoubles'};
+  if(!keyMap[key]) return;
   G[keyMap[key]]=!G[keyMap[key]];
   el.textContent=G[keyMap[key]]?'ON':'OFF';
   el.classList.toggle('on',G[keyMap[key]]);
-  if(key==='escalating'){
-    document.getElementById('escalating-setup').style.display=G.escalating?'block':'none';
-    document.getElementById('base-bet-section').style.display=G.escalating?'none':'block';
-  }
 };
 window.setHon=function(n,el){ G.hon=n; document.querySelectorAll('#hon-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.onCourseChange=function(){
@@ -558,16 +743,19 @@ window.onCourseChange=function(){
   document.querySelectorAll('#hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent.trim())===G.holes));
 };
 
-async function refreshHome(){
-  const sel=document.getElementById('course-select');
+async function refreshHome(screenId){
+  const sid=screenId||'buckskins-home';
+  const selId=sid==='back9doubles-home'?'b9-course-select':sid==='escalating-home'?'esc-course-select':'course-select';
+  const piId=sid==='back9doubles-home'?'b9-players-inputs':sid==='escalating-home'?'esc-players-inputs':'players-inputs';
+  const sel=document.getElementById(selId);
   const courses=getCourses();
   sel.innerHTML='<option value="">-- select course --</option>';
   courses.forEach((c,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=c.name+(c.holes===18?' (18)':' (9)'); sel.appendChild(o); });
-  await renderPlayerInputs();
+  await renderPlayerInputs(piId);
 }
 
-async function renderPlayerInputs(){
-  const pi=document.getElementById('players-inputs');
+async function renderPlayerInputs(containerId){
+  const pi=document.getElementById(containerId||'players-inputs');
   const knownPlayers = await getKnownPlayers();
   pi.innerHTML='';
   for(let i=0;i<6;i++){
@@ -606,7 +794,10 @@ window.pickSuggestion=function(i,name){
 
 // ── HOST GAME ────────────────────────────────────────────────────────────────
 window.hostGame=async function(){
-  const inputs=document.querySelectorAll('#players-inputs input');
+  const activeScreen=document.querySelector('.screen.active');
+  const sid=activeScreen?activeScreen.id:'buckskins-home';
+  const piId=sid==='back9doubles-home'?'b9-players-inputs':sid==='escalating-home'?'esc-players-inputs':'players-inputs';
+  const inputs=document.querySelectorAll('#'+piId+' input');
   const names=[];
   inputs.forEach(inp=>{ const v=inp.value.trim(); if(v) names.push(v); });
   if(names.length<1){ alert('Enter at least your own name to start'); return; }
