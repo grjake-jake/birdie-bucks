@@ -112,7 +112,7 @@ select.inp{color:var(--text);}
 .home-hero-title{font-size:36px;font-weight:900;color:#fff;text-shadow:2px 2px 4px rgba(0,0,0,0.5);margin-bottom:4px;}
 .home-hero-sub{font-size:16px;color:#c8e6c8;font-weight:700;margin-bottom:16px;}
 .golf-animation{width:100%;height:140px;position:relative;}
-.game-btn{display:block;width:100%;padding:18px;border:3px solid var(--green);border-radius:var(--radius-lg);background:#fff;color:var(--green);font-size:22px;font-weight:900;cursor:pointer;text-align:left;margin-bottom:12px;-webkit-tap-highlight-color:transparent;position:relative;}
+.game-btn{display:flex;align-items:center;width:100%;padding:18px;border:3px solid var(--green);border-radius:var(--radius-lg);background:#fff;color:var(--green);font-size:22px;font-weight:900;cursor:pointer;text-align:left;margin-bottom:12px;-webkit-tap-highlight-color:transparent;position:relative;}
 .game-btn:active{background:var(--green-light);}
 .game-btn .game-icon{font-size:28px;margin-right:12px;}
 .game-btn .game-arrow{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:24px;color:var(--green);}
@@ -249,21 +249,9 @@ select.inp{color:var(--text);}
     <div style="width:80px"></div>
   </div>
   <div style="padding:8px 0 4px;font-size:15px;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">select game mode</div>
-  <button class="game-btn" onclick="selectBSMode('buckskins-home')">
-    <span class="game-icon">💰</span>
-    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Buck Skins</div><div style="font-size:14px;font-weight:700;color:var(--text2);">flat bet per hole</div></div>
-    <span class="game-arrow">›</span>
-  </button>
-  <button class="game-btn" onclick="selectBSMode('back9doubles-home')">
-    <span class="game-icon">2️⃣</span>
-    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Back 9 Doubles</div><div style="font-size:14px;font-weight:700;color:var(--text2);">back 9 hole value doubles</div></div>
-    <span class="game-arrow">›</span>
-  </button>
-  <button class="game-btn" onclick="selectBSMode('escalating-home')">
-    <span class="game-icon">📈</span>
-    <div style="flex:1;text-align:left;"><div style="font-size:20px;font-weight:900;">Escalating Stakes</div><div style="font-size:14px;font-weight:700;color:var(--text2);">bet increases every 6 holes</div></div>
-    <span class="game-arrow">›</span>
-  </button>
+  <button class="game-btn" onclick="selectBSMode('buckskins-home')"><span class="game-icon">💰</span><span style="flex:1;text-align:left;"><span style="display:block;font-size:20px;font-weight:900;">Buck Skins</span><span style="display:block;font-size:14px;font-weight:700;color:var(--text2);">flat bet per hole</span></span><span class="game-arrow">›</span></button>
+  <button class="game-btn" onclick="selectBSMode('back9doubles-home')"><span class="game-icon">2️⃣</span><span style="flex:1;text-align:left;"><span style="display:block;font-size:20px;font-weight:900;">Back 9 Doubles</span><span style="display:block;font-size:14px;font-weight:700;color:var(--text2);">back 9 hole value doubles</span></span><span class="game-arrow">›</span></button>
+  <button class="game-btn" onclick="selectBSMode('escalating-home')"><span class="game-icon">📈</span><span style="flex:1;text-align:left;"><span style="display:block;font-size:20px;font-weight:900;">Escalating Stakes</span><span style="display:block;font-size:14px;font-weight:700;color:var(--text2);">bet increases every 6 holes</span></span><span class="game-arrow">›</span></button>
   <div class="divider">— or —</div>
   <button class="btn outline" onclick="showScreen('join')">join existing game</button>
 </div>
