@@ -1144,8 +1144,9 @@ function stateAtHole(h){
     const nums=s.map(Number), min=Math.min(...nums);
     const winners=nums.reduce((a,v,j)=>{ if(v===min)a.push(j); return a; },[]);
     const isTie=winners.length>1, par=G.pars[i]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
+    const isTieBirdie=isTie&&G.birdieDoubles&&min<=(par-1);
     if(!isTie){ if(isBirdie) pot*=2; pot=getHoleBet(i+1<G.holes?i+1:i); }
-    else { if(G.carryovers) pot+=hbet; else pot=getHoleBet(i+1<G.holes?i+1:i); }
+    else { if(G.carryovers) pot+=(isTieBirdie?hbet*2:hbet); else pot=getHoleBet(i+1<G.holes?i+1:i); }
     if(hh===-1){ if(!isTie) hh=winners[0]; }
     else{ if(min<nums[hh]&&!isTie) hh=winners[0]; }
   }
@@ -1164,13 +1165,14 @@ function calcFull(){
     const nums=s.map(Number), min=Math.min(...nums);
     const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
     const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
+    const isTieBirdie=isTie&&G.birdieDoubles&&min<=(par-1);
     let finalPot=isBirdie?pot*2:pot;
-    const entry={h,isTie,isBirdie,holeWinner:isTie?-1:winners[0],finalPot,honorsHolder:hh,scores:[...nums],par,hbet};
+    const entry={h,isTie,isBirdie,isTieBirdie,holeWinner:isTie?-1:winners[0],finalPot,honorsHolder:hh,scores:[...nums],par,hbet};
     if(!isTie){
       const w=winners[0];
       for(let i=0;i<n;i++){ if(i!==w){ net[i]-=finalPot; net[w]+=finalPot; holeWon[w]+=finalPot; } }
       pot=getHoleBet(h+1<G.holes?h+1:h);
-    } else { if(G.carryovers) pot+=hbet; else pot=getHoleBet(h+1<G.holes?h+1:h); }
+    } else { if(G.carryovers) pot+=(isTieBirdie?hbet*2:hbet); else pot=getHoleBet(h+1<G.holes?h+1:h); }
     let newHH=hh;
     if(hh===-1){
       if(!isTie){
@@ -1314,10 +1316,12 @@ function renderHoleResult(){
   const nums=s.map(Number), min=Math.min(...nums);
   const winners=nums.reduce((a,v,i)=>{ if(v===min)a.push(i); return a; },[]);
   const isTie=winners.length>1, par=G.pars[h]||4, isBirdie=!isTie&&G.birdieDoubles&&min<=(par-1);
+  const isTieBirdie=isTie&&G.birdieDoubles&&min<=(par-1);
   const finalPot=isBirdie?pot*2:pot, n=dp.length;
   let html='';
   const hbetDisplay=getHoleBet(h);
-  if(isTie) html+='<span class="badge gray" style="font-size:18px">'+(G.carryovers?'tie — '+fmt(hbetDisplay)+' carries over':'tie — no carry-over')+'</span>';
+  const carryAdd=isTieBirdie?hbetDisplay*2:hbetDisplay;
+  if(isTie) html+='<span class="badge gray" style="font-size:18px">'+(G.carryovers?(isTieBirdie?'tie with birdie — hole value doubles to '+fmt(carryAdd)+', carries over':'tie — '+fmt(carryAdd)+' carries over'):'tie — no carry-over')+'</span>';
   else{
     const totalWin=finalPot*(n-1);
     html+='<span class="badge green" style="font-size:18px">🏆 '+escH(dp[winners[0]])+' wins '+fmt(totalWin)+(isBirdie?' 🐦 birdie!':'')+'</span>';
@@ -1497,8 +1501,8 @@ function renderScorecard(){
       const carryTd=document.createElement('td');
       carryTd.colSpan=n;
       carryTd.style.cssText='padding:6px;text-align:center;font-size:15px;font-weight:900;color:var(--gold);border:2px solid #999';
-      const nextHbet=getHoleBet(e.h+1<G.holes?e.h+1:e.h);
-      carryTd.textContent='⏩ CARRY OVER — next pot: '+fmt(e.finalPot+nextHbet)+' each';
+      const addAmt=e.isTieBirdie?e.hbet*2:e.hbet;
+      carryTd.textContent='⏩ CARRY OVER — next pot: '+fmt(e.finalPot+addAmt)+' each';
       resultTr.appendChild(carryTd);
     } else {
       dp.forEach((_,pi)=>{
