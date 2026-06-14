@@ -503,7 +503,7 @@ select.inp{color:var(--text);}
   </div>
   <div class="hole-nav">
     <button class="nav-btn" id="prev-btn" onclick="prevHole()" disabled>← prev</button>
-    <span id="hole-nav-label" style="font-size:24px;font-weight:900;">hole 1</span>
+    <span id="hole-nav-label" style="font-size:24px;font-weight:900;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="showHolePicker()">hole 1</span>
     <button class="nav-btn" id="next-btn" onclick="nextHole()">next →</button>
   </div>
   <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:5%"></div></div>
@@ -652,6 +652,22 @@ select.inp{color:var(--text);}
   </div>
 </div>
 
+<!-- HOLE PICKER -->
+<div class="overlay" id="hole-picker-overlay">
+  <div class="scorecard-modal">
+    <div class="sc-title"><span>jump to hole</span><span class="sc-close" onclick="document.getElementById('hole-picker-overlay').classList.remove('active')">✕</span></div>
+    <div id="hole-picker-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:16px;"></div>
+  </div>
+</div>
+
+<!-- SS HOLE PICKER -->
+<div class="overlay" id="ss-hole-picker-overlay">
+  <div class="scorecard-modal">
+    <div class="sc-title"><span>jump to hole</span><span class="sc-close" onclick="document.getElementById('ss-hole-picker-overlay').classList.remove('active')">✕</span></div>
+    <div id="ss-hole-picker-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:16px;"></div>
+  </div>
+</div>
+
 <!-- COURSES -->
 <div id="courses" class="screen">
   <div class="top-bar">
@@ -707,6 +723,16 @@ let G = {
 };
 let newCourseHoles = 9;
 let isOnline = true;
+
+// ── GLOBAL ERROR HANDLER ────────────────────────────────────────────────────
+// Catches unhandled promise rejections (e.g. failed Firebase writes) that would
+// otherwise fail silently and make buttons appear to "do nothing".
+window.addEventListener('unhandledrejection', function(e){
+  console.error('Unhandled error:', e.reason);
+  const msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason);
+  alert('Something went wrong saving your data:\n\n'+msg+'\n\nCheck your connection and try again.');
+  e.preventDefault();
+});
 
 // ── CONNECTION MONITOR ───────────────────────────────────────────────────────
 const connRef = ref(db, '.info/connected');
@@ -1429,6 +1455,34 @@ window.nextHole=function(){
   }
   if(G.currentHole<G.holes-1){ G.scorecardShownForHole=null; G.currentHole++; update(ref(db,'games/'+G.roomCode),{currentHole:G.currentHole}); renderHole(); }
 };
+window.showHolePicker=function(){
+  const grid=document.getElementById('hole-picker-grid');
+  grid.innerHTML='';
+  for(let i=0;i<G.holes;i++){
+    const btn=document.createElement('button');
+    btn.className='btn'+(i===G.currentHole?' primary':' outline');
+    btn.style.marginBottom='0';
+    btn.style.fontSize='20px';
+    btn.style.padding='14px 0';
+    btn.textContent='hole '+(i+1);
+    btn.onclick=()=>jumpToHole(i);
+    grid.appendChild(btn);
+  }
+  document.getElementById('hole-picker-overlay').classList.add('active');
+};
+window.jumpToHole=function(target){
+  const h=G.currentHole, s=G.scores[h], dp=getDisplayPlayers();
+  if(target!==h){
+    const missing=dp.filter((_,i)=>!s||isMissing(s[i]));
+    if(missing.length>0){
+      const go=confirm('⚠️ '+missing.join(', ')+' still missing a score on hole '+(h+1)+'. Jump to hole '+(target+1)+' anyway?');
+      if(!go) return;
+    }
+  }
+  document.getElementById('hole-picker-overlay').classList.remove('active');
+  G.scorecardShownForHole=null; G.currentHole=target;
+  update(ref(db,'games/'+G.roomCode),{currentHole:G.currentHole}); renderHole();
+};
 
 // ── SCORECARD ────────────────────────────────────────────────────────────────
 window.showScorecard=function(){ renderScorecard(); document.getElementById('scorecard-overlay').classList.add('active'); };
@@ -2078,6 +2132,34 @@ window.ssNextHole=function(){
   }
   if(SS.currentHole<SS.holes-1){ SS.scorecardShownForHole=null; SS.currentHole++; update(ref(db,'ss_games/'+SS.roomCode),{currentHole:SS.currentHole}); ssRenderHole(); }
 };
+window.ssShowHolePicker=function(){
+  const grid=document.getElementById('ss-hole-picker-grid');
+  grid.innerHTML='';
+  for(let i=0;i<SS.holes;i++){
+    const btn=document.createElement('button');
+    btn.className='btn'+(i===SS.currentHole?' primary':' outline');
+    btn.style.marginBottom='0';
+    btn.style.fontSize='20px';
+    btn.style.padding='14px 0';
+    btn.textContent='hole '+(i+1);
+    btn.onclick=()=>ssJumpToHole(i);
+    grid.appendChild(btn);
+  }
+  document.getElementById('ss-hole-picker-overlay').classList.add('active');
+};
+window.ssJumpToHole=function(target){
+  const h=SS.currentHole, s=SS.scores[h], dp=ssGetDisplayPlayers();
+  if(target!==h){
+    const missing=dp.filter((_,i)=>!s||ssIsMissing(s[i]));
+    if(missing.length>0){
+      const go=confirm('⚠️ '+missing.join(', ')+' still missing a score on hole '+(h+1)+'. Jump to hole '+(target+1)+' anyway?');
+      if(!go) return;
+    }
+  }
+  document.getElementById('ss-hole-picker-overlay').classList.remove('active');
+  SS.scorecardShownForHole=null; SS.currentHole=target;
+  update(ref(db,'ss_games/'+SS.roomCode),{currentHole:SS.currentHole}); ssRenderHole();
+};
 
 // Scorecard
 window.ssShowScorecard=function(){ ssRenderScorecard(); document.getElementById('ss-scorecard-overlay').classList.add('active'); };
@@ -2304,7 +2386,7 @@ checkRejoinSession();
   </div>
   <div class="hole-nav">
     <button class="nav-btn" id="ss-prev-btn" onclick="ssPrevHole()" disabled>← prev</button>
-    <span id="ss-hole-nav-label" style="font-size:24px;font-weight:900;">hole 1</span>
+    <span id="ss-hole-nav-label" style="font-size:24px;font-weight:900;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="ssShowHolePicker()">hole 1</span>
     <button class="nav-btn" id="ss-next-btn" onclick="ssNextHole()">next →</button>
   </div>
   <div class="prog-bar"><div class="prog-fill" id="ss-prog-fill" style="width:5%"></div></div>
