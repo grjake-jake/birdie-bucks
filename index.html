@@ -503,9 +503,10 @@ select.inp{color:var(--text);}
   </div>
   <div class="hole-nav">
     <button class="nav-btn" id="prev-btn" onclick="prevHole()" disabled>← prev</button>
-    <span id="hole-nav-label" style="font-size:24px;font-weight:900;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="showHolePicker()">hole 1</span>
+    <span id="hole-nav-label" style="font-size:24px;font-weight:900;">hole 1</span>
     <button class="nav-btn" id="next-btn" onclick="nextHole()">next →</button>
   </div>
+  <button class="btn outline" style="margin-bottom:10px;font-size:16px;padding:10px;" onclick="showHolePicker()">⛳ skip to hole</button>
   <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:5%"></div></div>
   <div id="offline-alert" class="offline-alert">⚠️ no connection — scores will sync when back online</div>
   <div id="missing-alert" class="missing-alert"></div>
@@ -2386,9 +2387,10 @@ checkRejoinSession();
   </div>
   <div class="hole-nav">
     <button class="nav-btn" id="ss-prev-btn" onclick="ssPrevHole()" disabled>← prev</button>
-    <span id="ss-hole-nav-label" style="font-size:24px;font-weight:900;cursor:pointer;text-decoration:underline;text-decoration-style:dotted;" onclick="ssShowHolePicker()">hole 1</span>
+    <span id="ss-hole-nav-label" style="font-size:24px;font-weight:900;">hole 1</span>
     <button class="nav-btn" id="ss-next-btn" onclick="ssNextHole()">next →</button>
   </div>
+  <button class="btn outline" style="margin-bottom:10px;font-size:16px;padding:10px;" onclick="ssShowHolePicker()">⛳ skip to hole</button>
   <div class="prog-bar"><div class="prog-fill" id="ss-prog-fill" style="width:5%"></div></div>
   <div id="ss-missing-alert" class="missing-alert"></div>
   <div class="card">
