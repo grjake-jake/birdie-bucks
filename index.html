@@ -1272,7 +1272,9 @@ function renderHole(){
     const isEdited=G.isHost&&G.editedCells&&G.editedCells[h+'_'+i];
     const editedClass=isEdited?' host-edited':'';
     const lockedMsg=!canEdit?'<div class="locked-label">waiting...</div>':'';
-    div.innerHTML='<label>'+escH(p)+(isEdited?' <span style="color:var(--yellow);font-size:13px">✏️ edited</span>':'')+'</label>'
+    const holdsHonors=G.hon>0&&honorsHolder===i;
+    const honorsBadge=holdsHonors?' <span style="font-size:12px;font-weight:900;color:var(--gold);background:var(--gold-light);border-radius:4px;padding:1px 6px;">HONORS</span>':'';
+    div.innerHTML='<label>'+escH(p)+honorsBadge+(isEdited?' <span style="color:var(--yellow);font-size:13px">✏️ edited</span>':'')+'</label>'
       +'<input type="number" min="1" max="15" inputmode="numeric" value="'+val+'" class="'+editedClass+'" '
       +(canEdit?'oninput="window._sc('+h+','+i+',this.value)" onchange="window._advanceFocus('+i+','+dp.length+')'+'"':'disabled')+'>'
       +lockedMsg;
