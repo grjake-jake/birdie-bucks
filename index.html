@@ -808,8 +808,13 @@ async function getKnownPlayers(){
 }
 async function saveKnownPlayer(name){
   if(!name||!name.trim()) return;
-  const key = normName(name).replace(/[^a-z0-9]/g,'_');
-  await update(ref(db,'known_players'), {[key]: name.trim()});
+  // Take only the first name if multiple names were entered (e.g. "Kent/Cody" or "Kent Cody")
+  const firstToken=name.trim().split(/[\s/]+/)[0];
+  if(!firstToken) return;
+  // Capitalize first letter, lowercase the rest
+  const clean=firstToken.charAt(0).toUpperCase()+firstToken.slice(1).toLowerCase();
+  const key = normName(clean).replace(/[^a-z0-9]/g,'_');
+  await update(ref(db,'known_players'), {[key]: clean});
 }
 
 // ── PAST GAMES ───────────────────────────────────────────────────────────────
@@ -2291,6 +2296,53 @@ refreshHome();
 buildNewParGrid();
 purgeOldGames();
 checkRejoinSession();
+
+// ── BACK BUTTON HANDLING ─────────────────────────────────────────────────────
+// Prevents the phone's back button from leaving the app entirely while a game
+// is in progress. Closes any open overlay first; if no overlay is open and a
+// game is active, asks for confirmation before allowing the user to leave.
+const ALL_OVERLAY_IDS=['scorecard-overlay','past-game-overlay','add-player-overlay','rules-overlay','hole-picker-overlay','ss-hole-picker-overlay','ss-scorecard-overlay'];
+function anyOverlayOpen(){
+  return ALL_OVERLAY_IDS.find(id=>{
+    const el=document.getElementById(id);
+    return el && el.classList.contains('active');
+  });
+}
+function closeOverlay(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.remove('active');
+}
+function inActiveGame(){
+  const activeScreen=document.querySelector('.screen.active');
+  if(!activeScreen) return false;
+  const id=activeScreen.id;
+  return id==='lobby'||id==='scoring'||id==='ss-lobby'||id==='ss-scoring';
+}
+function pushBackGuard(){
+  history.pushState({bbGuard:true}, '');
+}
+// Seed the guard entry so the first back press is caught
+pushBackGuard();
+window.addEventListener('popstate', function(){
+  const openOverlay=anyOverlayOpen();
+  if(openOverlay){
+    closeOverlay(openOverlay);
+    pushBackGuard();
+    return;
+  }
+  if(inActiveGame()){
+    const leave=confirm('Leave game?\n\nYour progress is saved — you can rejoin from the home screen.');
+    if(leave){
+      // Let the back navigation proceed without re-trapping
+      return;
+    } else {
+      pushBackGuard();
+    }
+  } else {
+    pushBackGuard();
+  }
+});
+
 </script>
 
 <!-- STABLESTAKES SCORECARD OVERLAY -->
