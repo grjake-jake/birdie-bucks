@@ -197,6 +197,12 @@ select.inp{color:var(--text);}
 
 <!-- MAIN HOME -->
 <div id="main-home" class="screen active">
+  <div id="rejoin-banner" style="display:none;background:var(--gold-light);border:2px solid var(--gold);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;">
+    <div style="font-size:17px;font-weight:900;color:var(--gold);margin-bottom:8px;">⏪ game in progress</div>
+    <div id="rejoin-detail" style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px;"></div>
+    <button class="btn primary" style="margin-bottom:6px;" onclick="rejoinGame()">rejoin game →</button>
+    <button class="btn outline" style="margin-bottom:0;font-size:14px;padding:8px;" onclick="dismissRejoin()">dismiss</button>
+  </div>
   <div class="home-hero">
     <div class="home-hero-title">⛳ Birdie Bucks</div>
     <div class="home-hero-sub">golf money games</div>
@@ -718,6 +724,49 @@ function escH(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'
 function fmt(n){ if(n===0) return '$0'; const a=Math.abs(n); return '$'+(a%1===0?a:parseFloat(a).toFixed(2)); }
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<4;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
 function getCourses(){ try{ return JSON.parse(localStorage.getItem('bb_courses')||'[]'); }catch(e){ return []; } }
+function saveSession(s){ try{ localStorage.setItem('bb_session',JSON.stringify(s)); }catch(e){} }
+function loadSession(){ try{ return JSON.parse(localStorage.getItem('bb_session')||'null'); }catch(e){ return null; } }
+function clearSession(){ try{ localStorage.removeItem('bb_session'); }catch(e){} }
+
+async function checkRejoinSession(){
+  const sess=loadSession();
+  const banner=document.getElementById('rejoin-banner');
+  if(!banner) return;
+  if(!sess||!sess.roomCode){ banner.style.display='none'; return; }
+  try{
+    const path=sess.game==='ss'?'ss_games/':'games/';
+    const snap=await get(ref(db,path+sess.roomCode));
+    if(!snap.exists()){ clearSession(); banner.style.display='none'; return; }
+    const game=snap.val();
+    const label=sess.game==='ss'?'Stable Stakes':'Buck Skins';
+    document.getElementById('rejoin-detail').textContent=label+' — room '+sess.roomCode+' as '+(sess.myName||'host')+(sess.isHost?' (host)':'');
+    banner.style.display='block';
+  }catch(e){ banner.style.display='none'; }
+}
+window.rejoinGame=async function(){
+  const sess=loadSession();
+  if(!sess||!sess.roomCode) return;
+  try{
+    const path=sess.game==='ss'?'ss_games/':'games/';
+    const snap=await get(ref(db,path+sess.roomCode));
+    if(!snap.exists()){ alert('That game is no longer available.'); clearSession(); checkRejoinSession(); return; }
+    const game=snap.val();
+    const players=game.players||[];
+    if(sess.game==='ss'){
+      const matchIdx=sess.isHost?0:players.findIndex(p=>normName(p)===normName(sess.myName));
+      await ssDoJoin(sess.roomCode, game, players, matchIdx>=0?matchIdx:0, sess.myName||players[0]);
+      SS.isHost=sess.isHost;
+    } else {
+      const matchIdx=sess.isHost?0:players.findIndex(p=>normName(p)===normName(sess.myName));
+      await _doJoin(sess.roomCode, game, players, matchIdx>=0?matchIdx:0, sess.myName||players[0]);
+      G.isHost=sess.isHost;
+    }
+  }catch(e){ alert('Could not rejoin. Check your connection and try again.'); }
+};
+window.dismissRejoin=function(){
+  clearSession();
+  document.getElementById('rejoin-banner').style.display='none';
+};
 function saveCourses(a){ try{ localStorage.setItem('bb_courses',JSON.stringify(a)); }catch(e){} }
 function normName(s){ return String(s||'').trim().toLowerCase(); }
 function getDisplayPlayers(){ return (G.players||[]).filter(p=>p&&String(p).trim()); }
@@ -823,7 +872,7 @@ window.showRules=function(mode){
     escalating:'📈 Escalating Stakes'
   };
   const rules={
-    buckskins:'Best score on a hole wins that hole\'s pot from every other player. Ties mean nobody wins. Turn on Carry-Overs to stack tied holes. Turn on Birdie Doubles to double the pot when a birdie wins.',
+    buckskins:'Best score on a hole wins that hole\'s pot from every other player. Ties mean nobody wins. Turn on Carry-Overs to stack tied holes. Turn on Birdie Doubles to double the pot when a birdie wins. If a tied hole is also a birdie, that hole\'s value doubles before carrying over to the next hole.',
     back9doubles:'Same as Buck Skins but every hole on the back 9 is automatically worth double. Set your front 9 bet and the back 9 doubles itself.',
     escalating:'The bet increases every 6 holes. You set the dollar amount for holes 1-6, 7-12, and 13-18 separately. Carry-overs crossing into a new tier use the new tier value.'
   };
@@ -945,6 +994,7 @@ window.hostGame=async function(){
     mode:'singles', scores:G.scores, editedCells:{}, currentHole:0, status:'lobby', created:Date.now()
   });
   document.getElementById('lobby-code').textContent=G.roomCode;
+  saveSession({game:'bb', roomCode:G.roomCode, myName:G.myName, isHost:true});
   onValue(ref(db,'games/'+G.roomCode+'/players'),snap=>{
     const players=snap.val()||[];
     G.players=players;
@@ -1064,6 +1114,7 @@ async function _doJoin(code, game, players, myIdx, myName){
   G.scores=game.scores||Array(G.holes).fill(null).map(()=>Array(players.length).fill(''));
   G.currentHole=game.currentHole||0; G.editedCells=game.editedCells||{};
   document.getElementById('scoring-room-code').textContent=code;
+  saveSession({game:'bb', roomCode:code, myName:myName, isHost:false});
   // Always start both listeners regardless of lobby/active status
   listenGame(); listenScoring(); showScreen('scoring'); renderHole();
 }
@@ -1077,7 +1128,7 @@ window.startRound=async function(){
   document.getElementById('scoring-room-code').textContent=G.roomCode;
   listenGame(); listenScoring(); showScreen('scoring'); renderHole();
 };
-window.cancelGame=function(){ if(G.roomCode) set(ref(db,'games/'+G.roomCode),null); showScreen('main-home'); };
+window.cancelGame=function(){ if(G.roomCode) set(ref(db,'games/'+G.roomCode),null); clearSession(); showScreen('main-home'); };
 
 // ── LISTENERS ────────────────────────────────────────────────────────────────
 function listenGame(){
@@ -1631,6 +1682,7 @@ window.endGame=async function(){
     escalating:G.escalating, escBet:G.escBet,
     scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName };
   await saveCompletedGame(gameData);
+  clearSession();
   buildResults('final-results','final-net-grid','final-payouts');
   showScreen('final-results');
 };
@@ -1806,6 +1858,7 @@ window.ssHostGame=async function(){
     scores:SS.scores, editedCells:{}, currentHole:0, status:'lobby', created:Date.now()
   });
   document.getElementById('ss-lobby-code').textContent=SS.roomCode;
+  saveSession({game:'ss', roomCode:SS.roomCode, myName:SS.myName, isHost:true});
   onValue(ref(db,'ss_games/'+SS.roomCode+'/players'),snap=>{
     const players=snap.val()||[];
     SS.players=players;
@@ -1862,6 +1915,7 @@ async function ssDoJoin(code, game, players, myIdx, myName){
   SS.scores=game.scores||Array(SS.holes).fill(null).map(()=>Array(players.length).fill(''));
   SS.currentHole=game.currentHole||0; SS.editedCells=game.editedCells||{};
   document.getElementById('ss-scoring-room-code').textContent=code;
+  saveSession({game:'ss', roomCode:code, myName:myName, isHost:false});
   ssListenGame(); ssListenScoring(); showScreen('ss-scoring'); ssRenderHole();
 }
 
@@ -1873,7 +1927,7 @@ window.ssStartRound=async function(){
   document.getElementById('ss-scoring-room-code').textContent=SS.roomCode;
   ssListenGame(); ssListenScoring(); showScreen('ss-scoring'); ssRenderHole();
 };
-window.ssCancelGame=function(){ if(SS.roomCode) set(ref(db,'ss_games/'+SS.roomCode),null); showScreen('main-home'); };
+window.ssCancelGame=function(){ if(SS.roomCode) set(ref(db,'ss_games/'+SS.roomCode),null); clearSession(); showScreen('main-home'); };
 
 function ssListenGame(){
   if(SS.gameListener) SS.gameListener();
@@ -2103,6 +2157,7 @@ window.ssShowResults=function(){ ssBuildResults('ss-results','ss-net-grid','ss-p
 window.ssEndGame=async function(){
   const gameData={ players:SS.players, holes:SS.holes, pars:SS.pars, bet:SS.bet, scores:SS.scores, editedCells:SS.editedCells||{}, gameType:'stablestakes' };
   await saveCompletedGame(gameData);
+  clearSession();
   ssBuildResults('ss-final-results','ss-final-net-grid','ss-final-payouts');
   showScreen('ss-final-results');
 };
@@ -2151,6 +2206,7 @@ function ssBuildResults(screenId,netId,payId){
 refreshHome();
 buildNewParGrid();
 purgeOldGames();
+checkRejoinSession();
 </script>
 
 <!-- STABLESTAKES SCORECARD OVERLAY -->
