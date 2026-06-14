@@ -1183,7 +1183,7 @@ function listenScoring(){
   G.liveListener=onValue(ref(db,'games/'+G.roomCode+'/scores'),snap=>{
     const scores=snap.val();
     if(scores) G.scores=scores;
-    renderLiveScores(); renderHoleResult(); highlightWinners(); checkMissingScores();
+    syncScoreInputs(); renderLiveScores(); renderHoleResult(); highlightWinners(); checkMissingScores();
     const h=G.currentHole, s=G.scores[h], dp=getDisplayPlayers();
     if(s&&dp.length>0&&s.length>=dp.length&&s.slice(0,dp.length).every(v=>!isMissing(v))){
       if(G.scorecardShownForHole!==h){
@@ -1355,6 +1355,16 @@ window._sc=async function(h,i,v){
   renderHoleResult(); highlightWinners(); checkMissingScores();
 };
 
+function syncScoreInputs(){
+  const h=G.currentHole, s=G.scores[h], dp=getDisplayPlayers();
+  if(!s) return;
+  const inputs=document.querySelectorAll('#score-inputs input');
+  inputs.forEach((inp,i)=>{
+    if(document.activeElement===inp) return; // don't disrupt whoever is typing
+    const val=!isMissing(s[i])?String(s[i]):'';
+    if(inp.value!==val) inp.value=val;
+  });
+}
 function highlightWinners(){
   const h=G.currentHole, s=G.scores[h];
   if(!s) return;
@@ -2008,7 +2018,7 @@ function ssListenScoring(){
   SS.liveListener=onValue(ref(db,'ss_games/'+SS.roomCode+'/scores'),snap=>{
     const scores=snap.val();
     if(scores) SS.scores=scores;
-    ssRenderLiveScores(); ssRenderHoleResult(); ssHighlightWinners(); ssCheckMissing();
+    ssSyncScoreInputs(); ssRenderLiveScores(); ssRenderHoleResult(); ssHighlightWinners(); ssCheckMissing();
     const h=SS.currentHole, s=SS.scores[h], dp=ssGetDisplayPlayers();
     if(s&&dp.length>0&&s.length>=dp.length&&s.slice(0,dp.length).every(v=>!ssIsMissing(v))){
       if(SS.scorecardShownForHole!==h){
@@ -2062,6 +2072,16 @@ window._sssc=async function(h,i,v){
   ssRenderHoleResult(); ssHighlightWinners(); ssCheckMissing();
 };
 
+function ssSyncScoreInputs(){
+  const h=SS.currentHole, s=SS.scores[h], dp=ssGetDisplayPlayers();
+  if(!s) return;
+  const inputs=document.querySelectorAll('#ss-score-inputs input');
+  inputs.forEach((inp,i)=>{
+    if(document.activeElement===inp) return;
+    const val=!ssIsMissing(s[i])?String(s[i]):'';
+    if(inp.value!==val) inp.value=val;
+  });
+}
 function ssHighlightWinners(){
   const h=SS.currentHole, s=SS.scores[h], dp=ssGetDisplayPlayers();
   if(!s) return;
