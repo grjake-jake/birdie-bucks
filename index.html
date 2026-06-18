@@ -128,11 +128,16 @@ select.inp{color:var(--text);}
 .sc-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px;}
 .sc-tbl{border-collapse:collapse;min-width:100%;}
 .sc-tbl th{background:#1a5c1a;color:#ffffff;padding:10px 6px;text-align:center;font-size:16px;font-weight:900;border:2px solid #000000;white-space:nowrap;}
+.sc-tbl th.col-a,.sc-tbl th.col-b{background:var(--bg2);color:#000000;border:2px solid #555555;}
 .sc-tbl th.name-col{text-align:left;padding-left:10px;min-width:70px;background:var(--blue);color:#fff;}
 .sc-tbl td{padding:10px 6px;text-align:center;border:2px solid #666666;font-size:20px;font-weight:800;}
 .sc-tbl td.name-cell{text-align:left;padding-left:10px;font-size:18px;color:var(--text);font-weight:900;white-space:nowrap;background:var(--blue-light);position:sticky;left:0;z-index:2;}
 .sc-tbl th.name-col{position:sticky;left:0;z-index:3;}
 .sc-tbl td.par-cell{font-size:16px;color:var(--blue);font-weight:800;background:var(--blue-light);}
+.sc-tbl tr.ss-row-a td{background:var(--col-a);}
+.sc-tbl tr.ss-row-b td{background:var(--col-b);}
+.sc-tbl tr.ss-row-a td.name-cell{background:var(--col-a);}
+.sc-tbl tr.ss-row-b td.name-cell{background:var(--col-b);}
 .sc-tbl td.result-cell{font-size:16px;font-weight:900;}
 .sc-tbl .col-a{background:var(--col-a);}
 .sc-tbl .col-b{background:var(--col-b);}
@@ -250,7 +255,7 @@ select.inp{color:var(--text);}
     </div>
   </div>
   <button class="game-btn" onclick="showScreen('buckskins-mode')"><span class="game-icon">💰</span>Buck Skins<span class="game-arrow">›</span></button>
-  <button class="game-btn" onclick="showScreen('stablestakes-home')"><span class="game-icon">📊</span>Stable Stakes<span class="game-arrow">›</span></button>
+  <button class="game-btn" onclick="showScreen('stablestakes-home')"><span class="game-icon">📊</span>Stableford Stakes<span class="game-arrow">›</span></button>
   <button class="game-btn coming-soon"><span class="game-icon">🐺</span>Wolf Wagers <span class="coming-soon-tag">coming soon</span><span class="game-arrow">›</span></button>
   <button class="btn outline" style="margin-top:4px" onclick="showPastGames()">📋 past games</button>
   <button class="btn outline" style="margin-top:4px" onclick="showScreen('how-to-play')">❓ how to play</button>
@@ -630,7 +635,7 @@ select.inp{color:var(--text);}
   </div>
 
   <div class="card">
-    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">📊 Stable Stakes</div>
+    <div style="font-size:22px;font-weight:900;color:var(--green);margin-bottom:8px;">📊 Stableford Stakes</div>
     <div style="font-size:16px;font-weight:800;color:var(--text);line-height:1.6;">
       A points-based game using the Stableford scoring system. Players earn points based on their score relative to par on each hole. The player with the most points at the end wins.
     </div>
@@ -774,7 +779,7 @@ async function checkRejoinSession(){
     const snap=await get(ref(db,path+sess.roomCode));
     if(!snap.exists()){ clearSession(); banner.style.display='none'; return; }
     const game=snap.val();
-    const label=sess.game==='ss'?'Stable Stakes':'Buck Skins';
+    const label=sess.game==='ss'?'Stableford Stakes':'Buck Skins';
     document.getElementById('rejoin-detail').textContent=label+' — room '+sess.roomCode+' as '+(sess.myName||'host')+(sess.isHost?' (host)':'');
     banner.style.display='block';
   }catch(e){ banner.style.display='none'; }
@@ -2210,15 +2215,15 @@ function ssRenderScorecard(){
   played.forEach((h,ci)=>{ html+='<th class="'+(ci%2===0?'col-a':'col-b')+'">H'+(h+1)+'</th>'; });
   html+='<th style="background:var(--green);color:#fff">pts</th></tr></thead><tbody>';
   // Par row
-  html+='<tr><td class="name-cell" style="font-size:15px;font-weight:800;color:var(--blue)">par</td>';
-  played.forEach((h,ci)=>{ html+='<td class="par-cell '+(ci%2===0?'col-a':'col-b')+'">'+(SS.pars[h]||4)+'</td>'; });
+  html+='<tr><td class="name-cell" style="font-size:15px;font-weight:800;color:var(--blue)">PAR</td>';
+  played.forEach((h,ci)=>{ html+='<td class="par-cell">'+(SS.pars[h]||4)+'</td>'; });
   html+='<td class="par-cell">—</td></tr>';
   // Player rows
   dp.forEach((p,pi)=>{
-    html+='<tr><td class="name-cell">'+escH(p)+'</td>';
+    const rowCls=pi%2===0?'ss-row-a':'ss-row-b';
+    html+='<tr class="'+rowCls+'"><td class="name-cell">'+escH(p)+'</td>';
     let playerTotal=0;
     played.forEach((h,ci)=>{
-      const colCls=ci%2===0?'col-a':'col-b';
       const sc=Number(SS.scores[h][pi]);
       const par=SS.pars[h]||4;
       const pts=ssPoints(sc,par);
@@ -2229,7 +2234,7 @@ function ssRenderScorecard(){
 
       if(sc!==1 && diff>2){
         // worse than double bogey - hide score
-        html+='<td class="'+colCls+(isEdited?' edited-score':'')+'"><div class="ss-score-num" style="color:var(--text3)">—</div></td>';
+        html+='<td'+(isEdited?' class="edited-score"':'')+'><div class="ss-score-num" style="color:var(--text3)">—</div></td>';
       } else {
         let wrapCls='';
         let numCls='';
@@ -2238,7 +2243,7 @@ function ssRenderScorecard(){
         else if(diff===-1) wrapCls='ss-birdie';
         else if(diff===1) wrapCls='ss-bogey';
         else if(diff===2) numCls='ss-dbogey';
-        html+='<td class="'+colCls+(isEdited?' edited-score':'')+'">'
+        html+='<td'+(isEdited?' class="edited-score"':'')+'>'
           +'<span class="ss-score-wrap '+wrapCls+'"><span class="ss-score-num '+numCls+'">'+sc+'</span></span>'
           +'<div class="ss-pts-line">'+pts+' pt'+(pts===1?'':'s')+'</div>'
           +'</td>';
@@ -2388,7 +2393,7 @@ window.addEventListener('popstate', function(){
 <!-- STABLESTAKES SCORECARD OVERLAY -->
 <div class="overlay" id="ss-scorecard-overlay">
   <div class="scorecard-modal">
-    <div class="sc-title"><span>📊 stable stakes scorecard</span><span class="sc-close" onclick="document.getElementById('ss-scorecard-overlay').classList.remove('active')">✕</span></div>
+    <div class="sc-title"><span>📊 stableford stakes scorecard</span><span class="sc-close" onclick="document.getElementById('ss-scorecard-overlay').classList.remove('active')">✕</span></div>
     <div id="ss-scorecard-content"></div>
     <button class="btn primary" style="margin-top:14px" onclick="document.getElementById('ss-scorecard-overlay').classList.remove('active')">← back to scoring</button>
   </div>
@@ -2398,7 +2403,7 @@ window.addEventListener('popstate', function(){
 <div id="stablestakes-home" class="screen">
   <div class="top-bar">
     <button class="btn sm" onclick="showScreen('main-home')">← back</button>
-    <div><div class="app-title" style="font-size:20px">📊 Stable Stakes</div><div class="app-sub">Birdie Bucks</div></div>
+    <div><div class="app-title" style="font-size:20px">📊 Stableford Stakes</div><div class="app-sub">Birdie Bucks</div></div>
     <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
   </div>
   <div class="card">
@@ -2433,7 +2438,7 @@ window.addEventListener('popstate', function(){
 <div id="ss-join" class="screen">
   <div class="top-bar">
     <button class="btn sm" onclick="showScreen('stablestakes-home')">← back</button>
-    <div style="font-size:20px;font-weight:900;color:var(--green)">join stable stakes</div>
+    <div style="font-size:20px;font-weight:900;color:var(--green)">join stableford stakes</div>
     <div style="width:80px"></div>
   </div>
   <div class="card">
@@ -2474,7 +2479,7 @@ window.addEventListener('popstate', function(){
 <!-- STABLESTAKES SCORING -->
 <div id="ss-scoring" class="screen">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;border-bottom:3px solid var(--green);padding-bottom:8px;">
-    <div><div style="font-size:18px;font-weight:900;color:var(--green)">⛳ Birdie Bucks</div><div style="font-size:13px;color:var(--text3);font-weight:700;">📊 Stable Stakes</div></div>
+    <div><div style="font-size:18px;font-weight:900;color:var(--green)">⛳ Birdie Bucks</div><div style="font-size:13px;color:var(--text3);font-weight:700;">📊 Stableford Stakes</div></div>
     <div style="font-size:14px;color:var(--text2);font-weight:700;"><span class="status-dot" id="ss-conn-dot"></span>live · <span id="ss-scoring-room-code" style="font-family:'Courier New',monospace;font-weight:900;color:var(--green)"></span></div>
   </div>
   <div class="hole-nav">
