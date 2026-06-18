@@ -139,6 +139,14 @@ select.inp{color:var(--text);}
 .sc-tbl .winner-score{color:var(--green);background:var(--green-light);}
 .sc-tbl .edited-score{background:var(--yellow-light);color:var(--yellow);}
 .sc-tbl sup{font-size:12px;color:var(--gold);font-weight:900;}
+.ss-score-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;}
+.ss-score-wrap.ss-birdie{border:2px solid var(--green);border-radius:50%;}
+.ss-score-wrap.ss-eagle{border:2px solid var(--gold);border-radius:50%;}
+.ss-score-wrap.ss-eagle::after{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border:2px solid var(--gold);border-radius:50%;}
+.ss-score-wrap.ss-bogey{border:2px solid var(--text3);border-radius:3px;}
+.ss-score-num{font-size:20px;font-weight:900;}
+.ss-score-num.ss-dbogey{color:var(--red);text-decoration:line-through;}
+.ss-pts-line{font-size:12px;font-weight:800;color:var(--text2);margin-top:2px;}
 .sc-tbl tr.result-row td{background:var(--bg3);border-top:3px solid var(--border2);}
 .sc-tbl tr.result-row td.name-cell{background:var(--bg3);}
 .totals-section{margin-top:12px;}
@@ -2214,15 +2222,27 @@ function ssRenderScorecard(){
       const sc=Number(SS.scores[h][pi]);
       const par=SS.pars[h]||4;
       const pts=ssPoints(sc,par);
+      const diff=sc-par;
       const isEdited=SS.editedCells&&SS.editedCells[h+'_'+pi];
       playerTotal+=pts;
       totals[pi]+=pts;
-      let ptLabel='';
-      if(pts===15) ptLabel='<sup style="color:var(--gold)">ACE</sup>';
-      else if(pts===10) ptLabel='<sup style="color:var(--gold)">2E</sup>';
-      else if(pts===8) ptLabel='<sup style="color:var(--gold)">E</sup>';
-      else if(pts===5) ptLabel='<sup style="color:var(--green)">B</sup>';
-      html+='<td class="'+colCls+(isEdited?' edited-score':'')+'" style="'+(pts===0?'color:var(--text3)':'')+'">'+(pts===0?'—':sc)+ptLabel+'</td>';
+
+      if(sc!==1 && diff>2){
+        // worse than double bogey - hide score
+        html+='<td class="'+colCls+(isEdited?' edited-score':'')+'"><div class="ss-score-num" style="color:var(--text3)">—</div></td>';
+      } else {
+        let wrapCls='';
+        let numCls='';
+        if(sc===1) wrapCls='ss-eagle';
+        else if(diff<=-2) wrapCls='ss-eagle';
+        else if(diff===-1) wrapCls='ss-birdie';
+        else if(diff===1) wrapCls='ss-bogey';
+        else if(diff===2) numCls='ss-dbogey';
+        html+='<td class="'+colCls+(isEdited?' edited-score':'')+'">'
+          +'<span class="ss-score-wrap '+wrapCls+'"><span class="ss-score-num '+numCls+'">'+sc+'</span></span>'
+          +'<div class="ss-pts-line">'+pts+' pt'+(pts===1?'':'s')+'</div>'
+          +'</td>';
+      }
     });
     html+='<td style="font-size:18px;font-weight:900;color:var(--green)">'+playerTotal+'</td>';
     html+='</tr>';
