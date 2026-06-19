@@ -130,7 +130,7 @@ select.inp{color:var(--text);}
 .sc-tbl th{background:#1a5c1a;color:#ffffff;padding:10px 6px;text-align:center;font-size:16px;font-weight:900;border:2px solid #000000;white-space:nowrap;}
 .sc-tbl th.col-a,.sc-tbl th.col-b{background:var(--bg2);color:#000000;border:2px solid #555555;}
 .sc-tbl th.name-col{text-align:left;padding-left:10px;min-width:70px;background:var(--blue);color:#fff;}
-.sc-tbl td{padding:10px 6px;text-align:center;border:2px solid #666666;font-size:20px;font-weight:800;}
+.sc-tbl td{padding:10px 4px;text-align:center;border:2px solid #666666;font-size:20px;font-weight:800;min-width:48px;}
 .sc-tbl td.name-cell{text-align:left;padding-left:10px;font-size:18px;color:var(--text);font-weight:900;white-space:nowrap;background:var(--blue-light);position:sticky;left:0;z-index:2;}
 .sc-tbl th.name-col{position:sticky;left:0;z-index:3;}
 .sc-tbl td.par-cell{font-size:16px;color:var(--blue);font-weight:800;background:var(--blue-light);}
@@ -145,14 +145,14 @@ select.inp{color:var(--text);}
 .sc-tbl .winner-score{color:var(--green);background:var(--green-light);}
 .sc-tbl .edited-score{background:var(--yellow-light);color:var(--yellow);}
 .sc-tbl sup{font-size:12px;color:var(--gold);font-weight:900;}
-.ss-score-wrap{position:relative;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;}
+.ss-score-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:32px;height:32px;margin:0 auto;}
 .ss-score-wrap.ss-birdie{border:2px solid var(--green);border-radius:50%;}
 .ss-score-wrap.ss-eagle{border:2px solid var(--gold);border-radius:50%;}
 .ss-score-wrap.ss-eagle::after{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border:2px solid var(--gold);border-radius:50%;}
 .ss-score-wrap.ss-bogey{border:2px solid var(--text3);border-radius:3px;}
 .ss-score-num{font-size:14px;font-weight:800;color:var(--text2);}
 .ss-score-num.ss-dbogey{color:var(--red);text-decoration:line-through;}
-.ss-pts-line{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;}
+.ss-pts-line{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;white-space:nowrap;}
 .sc-tbl tr.result-row td{background:var(--bg3);border-top:3px solid var(--border2);}
 .sc-tbl tr.result-row td.name-cell{background:var(--bg3);}
 .totals-section{margin-top:12px;}
