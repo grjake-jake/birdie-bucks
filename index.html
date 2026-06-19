@@ -171,6 +171,12 @@ select.inp{color:var(--text);}
 .tog-btn{padding:8px 22px;font-size:17px;font-weight:900;border-radius:30px;border:3px solid var(--border2);background:var(--card-bg);color:var(--text2);cursor:pointer;transition:all .2s;}
 .tog-btn.on{background:var(--green);color:#fff;border-color:var(--green);}
 .owes-row{background:#ffe8e8;border:4px solid #b30000;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.ff-predict-box{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.ff-locked-msg{background:#fff8e1;border:2px solid var(--gold);border-radius:var(--radius);padding:12px 16px;font-size:15px;font-weight:800;color:#8a6d00;text-align:center;margin-bottom:12px;}
+.ff-result-pos{color:var(--green);}
+.ff-result-neg{color:var(--red);}
+.ff-five-badge{display:inline-block;background:var(--gold);color:#000;font-weight:900;font-size:13px;padding:3px 10px;border-radius:20px;margin-left:8px;}
+.ff-hole-card{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
 .ss-breakdown-card{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
 .ss-breakdown-hd{font-size:17px;font-weight:900;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
 .ss-breakdown-hd-amt{font-size:17px;font-weight:900;}
@@ -264,7 +270,7 @@ select.inp{color:var(--text);}
   </div>
   <button class="game-btn" onclick="showScreen('buckskins-mode')"><span class="game-icon">💰</span>Buck Skins<span class="game-arrow">›</span></button>
   <button class="game-btn" onclick="showScreen('stablestakes-home')"><span class="game-icon">📊</span>Stableford Stakes<span class="game-arrow">›</span></button>
-  <button class="game-btn coming-soon"><span class="game-icon">🐺</span>Wolf Wagers <span class="coming-soon-tag">coming soon</span><span class="game-arrow">›</span></button>
+  <button class="game-btn" onclick="showScreen('forecastfives-home')"><span class="game-icon">⛳</span>Fore-cast Fives<span class="game-arrow">›</span></button>
   <button class="btn outline" style="margin-top:4px" onclick="showPastGames()">📋 past games</button>
   <button class="btn outline" style="margin-top:4px" onclick="showScreen('how-to-play')">❓ how to play</button>
 </div>
@@ -913,6 +919,7 @@ window.showScreen = function(id){
   if(id==='buckskins-home'||id==='back9doubles-home'||id==='escalating-home') refreshHome(id);
   if(id==='courses') refreshCourseList();
   if(id==='stablestakes-home') ssRefreshHome();
+  if(id==='forecastfives-home') ffRefreshHome();
 };
 window.setHoles=function(n,el){ G.holes=n; G.pars=Array(n).fill(4); el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
 window.setBet=function(n,el){ G.bet=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
@@ -1851,6 +1858,211 @@ window.deleteCourse=function(i){
 
 
 // ════════════════════════════════════════════════════════════════════════════
+// FORE-CAST FIVES GAME (solo)
+// ════════════════════════════════════════════════════════════════════════════
+let FF = {
+  holes:9, betPerStroke:1, fiveModifier:2, name:'', pars:[],
+  predictions:[], scores:[], currentHole:0
+};
+
+// Fore-cast Fives scoring: prediction layer + five modifier, returns {predictionAmt, fiveAmt, total}
+function ffHoleResult(predicted, actual, par, betPerStroke, fiveModifier){
+  predicted=Number(predicted); actual=Number(actual); par=Number(par);
+  const diff=actual-predicted;
+  // Prediction layer: beat/match = positive (keep), missed high = negative (owe)
+  let predictionAmt;
+  if(diff<=0) predictionAmt = Math.abs(diff)*betPerStroke;       // beat or matched: positive
+  else predictionAmt = -diff*betPerStroke;                        // missed high: negative
+  // Five modifier: only triggers on actual===5, flat amount, stacks (doesn't override)
+  let fiveAmt=0;
+  if(actual===5){
+    fiveAmt = (par===5) ? fiveModifier : -fiveModifier;
+  }
+  return { predictionAmt, fiveAmt, total: predictionAmt+fiveAmt };
+}
+
+window.ffSetHoles=function(n,el){ FF.holes=n; FF.pars=Array(n).fill(4); el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.ffSetBet=function(n,el){ FF.betPerStroke=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+window.ffSetFiveMod=function(n,el){ FF.fiveModifier=n; el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('on')); el.classList.add('on'); };
+
+window.ffOnCourseChange=function(){
+  const idx=document.getElementById('ff-course-select').value;
+  if(idx==='') return;
+  const c=getCourses()[parseInt(idx)];
+  FF.holes=c.holes; FF.pars=[...c.pars];
+  document.querySelectorAll('#ff-hole-chips .chip').forEach(ch=>ch.classList.toggle('on',parseInt(ch.textContent.trim())===FF.holes));
+};
+
+window.ffRefreshHome=function(){
+  const sel=document.getElementById('ff-course-select');
+  const courses=getCourses();
+  sel.innerHTML='<option value="">-- select course --</option>';
+  courses.forEach((c,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=c.name+(c.holes===18?' (18)':' (9)'); sel.appendChild(o); });
+};
+
+window.ffStartGame=function(){
+  const nameInp=document.getElementById('ff-name');
+  const name=(nameInp.value||'').trim();
+  if(!name){ alert('Enter your name to start'); return; }
+  if(!FF.pars||FF.pars.length!==FF.holes) FF.pars=Array(FF.holes).fill(4);
+  FF.name=name;
+  FF.predictions=Array(FF.holes).fill('');
+  FF.scores=Array(FF.holes).fill('');
+  FF.currentHole=0;
+  if(typeof saveKnownPlayer==='function') saveKnownPlayer(name);
+  showScreen('ff-scoring');
+  ffRenderHole();
+};
+
+window.ffPrevHole=function(){ if(FF.currentHole>0){ FF.currentHole--; ffRenderHole(); } };
+window.ffNextHole=function(){ if(FF.currentHole<FF.holes-1){ FF.currentHole++; ffRenderHole(); } };
+
+window.ffSubmitPrediction=function(){
+  const h=FF.currentHole;
+  const inp=document.getElementById('ff-predict-input');
+  const v=inp.value;
+  if(v===''||isNaN(Number(v))||Number(v)<1){ alert('Enter a valid predicted score'); return; }
+  FF.predictions[h]=Number(v);
+  ffRenderHole();
+};
+
+window.ffSubmitScore=function(){
+  const h=FF.currentHole;
+  const inp=document.getElementById('ff-actual-input');
+  const v=inp.value;
+  if(v===''||isNaN(Number(v))||Number(v)<1){ alert('Enter a valid actual score'); return; }
+  FF.scores[h]=Number(v);
+  ffRenderHole();
+};
+
+window.ffEditPrediction=function(){
+  const h=FF.currentHole;
+  FF.predictions[h]='';
+  FF.scores[h]='';
+  ffRenderHole();
+};
+
+function ffRunningTotal(){
+  let total=0;
+  for(let h=0;h<FF.holes;h++){
+    if(FF.predictions[h]!==''&&FF.scores[h]!==''){
+      const par=FF.pars[h]||4;
+      const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
+      total+=r.total;
+    }
+  }
+  return total;
+}
+
+function ffRenderHole(){
+  const h=FF.currentHole;
+  const par=FF.pars[h]||4;
+  document.getElementById('ff-hole-num').textContent='Hole '+(h+1)+' of '+FF.holes;
+  document.getElementById('ff-hole-par').textContent='Par '+par;
+  document.getElementById('ff-prev-btn').disabled=h===0;
+  document.getElementById('ff-next-btn').disabled=h===FF.holes-1;
+  document.getElementById('ff-running-total').textContent=fmt(ffRunningTotal());
+  const rt=ffRunningTotal();
+  document.getElementById('ff-running-total').className=rt>=0?'ff-result-pos':'ff-result-neg';
+
+  const body=document.getElementById('ff-hole-body');
+  const hasPrediction = FF.predictions[h]!==''&&FF.predictions[h]!==undefined;
+  const hasScore = FF.scores[h]!==''&&FF.scores[h]!==undefined;
+
+  if(!hasPrediction){
+    body.innerHTML='<div class="ff-predict-box">'
+      +'<span class="field-label">your prediction for this hole</span>'
+      +'<input class="inp" id="ff-predict-input" type="number" inputmode="numeric" placeholder="e.g. 5" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitPrediction()">lock in prediction →</button>'
+      +'</div>';
+  } else if(!hasScore){
+    body.innerHTML='<div class="ff-locked-msg">prediction locked: '+FF.predictions[h]+'</div>'
+      +'<div class="ff-predict-box">'
+      +'<span class="field-label">your actual score</span>'
+      +'<input class="inp" id="ff-actual-input" type="number" inputmode="numeric" placeholder="strokes" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitScore()">submit score →</button>'
+      +'</div>';
+  } else {
+    const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
+    const posPred=r.predictionAmt>=0;
+    let html='<div class="ff-hole-card">'
+      +'<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;margin-bottom:6px;">'
+      +'<span>predicted '+FF.predictions[h]+' · shot '+FF.scores[h]+'</span>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border2);">'
+      +'<span style="font-size:15px;color:var(--text2);font-weight:700;">prediction result</span>'
+      +'<span style="font-size:18px;font-weight:900;" class="'+(posPred?'ff-result-pos':'ff-result-neg')+'">'+(posPred&&r.predictionAmt>0?'+':'')+fmt(r.predictionAmt)+'</span>'
+      +'</div>';
+    if(r.fiveAmt!==0){
+      const posFive=r.fiveAmt>0;
+      html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border2);">'
+        +'<span style="font-size:15px;color:var(--text2);font-weight:700;">five modifier<span class="ff-five-badge">5</span></span>'
+        +'<span style="font-size:18px;font-weight:900;" class="'+(posFive?'ff-result-pos':'ff-result-neg')+'">'+(posFive?'+':'')+fmt(r.fiveAmt)+'</span>'
+        +'</div>';
+    }
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:2px solid var(--border);margin-top:4px;">'
+      +'<span style="font-size:16px;font-weight:900;">hole total</span>'
+      +'<span style="font-size:22px;font-weight:900;" class="'+(r.total>=0?'ff-result-pos':'ff-result-neg')+'">'+(r.total>=0&&r.total>0?'+':'')+fmt(r.total)+'</span>'
+      +'</div>'
+      +'</div>'
+      +'<button class="btn outline" onclick="ffEditPrediction()">redo this hole</button>';
+    body.innerHTML=html;
+  }
+}
+
+window.ffFinishRound=async function(){
+  const allDone = FF.predictions.slice(0,FF.holes).every(p=>p!=='') && FF.scores.slice(0,FF.holes).every(s=>s!=='');
+  if(!allDone){ if(!confirm('Not every hole has a prediction and score. Finish anyway?')) return; }
+  ffBuildResults();
+  showScreen('ff-results');
+  // Save to Firebase, same pattern as Stableford Stakes
+  try{
+    const id='ff_'+Date.now();
+    const gameData={ name:FF.name, holes:FF.holes, pars:FF.pars, betPerStroke:FF.betPerStroke, fiveModifier:FF.fiveModifier, predictions:FF.predictions, scores:FF.scores, gameType:'forecastfives' };
+    await set(ref(db,'completed_games/'+id), {...gameData, completedAt: Date.now()});
+  }catch(e){ console.error('FF save failed',e); }
+};
+
+function ffBuildResults(){
+  let predictionTotal=0, fiveTotal=0, grandTotal=0, holesPlayed=0, exactHits=0;
+  const rows=[];
+  for(let h=0;h<FF.holes;h++){
+    if(FF.predictions[h]===''||FF.scores[h]==='') continue;
+    holesPlayed++;
+    const par=FF.pars[h]||4;
+    const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
+    predictionTotal+=r.predictionAmt; fiveTotal+=r.fiveAmt; grandTotal+=r.total;
+    if(Number(FF.predictions[h])===Number(FF.scores[h])) exactHits++;
+    rows.push({h,par,predicted:FF.predictions[h],actual:FF.scores[h],r});
+  }
+  const accuracy = holesPlayed>0 ? Math.round((exactHits/holesPlayed)*100) : 0;
+
+  const summary=document.getElementById('ff-results-summary');
+  summary.innerHTML='<div class="net-card '+(grandTotal>=0?'pos':'neg')+'" style="margin:0 auto;max-width:320px;">'
+    +'<div style="font-size:15px;color:'+(grandTotal>=0?'var(--green)':'var(--red)')+'">'+escH(FF.name)+'</div>'
+    +'<div style="font-size:17px;font-weight:800;color:var(--blue)">'+holesPlayed+' holes · '+accuracy+'% exact</div>'
+    +'<div style="font-size:32px;font-weight:900;color:'+(grandTotal>=0?'var(--green)':'var(--red)')+';">'+(grandTotal>=0&&grandTotal>0?'+':'')+fmt(grandTotal)+'</div>'
+    +'</div>';
+
+  const breakdown=document.getElementById('ff-results-breakdown');
+  let html='<div class="ss-breakdown-card">'
+    +'<div class="ss-breakdown-hd"><span>prediction layer</span><span style="color:'+(predictionTotal>=0?'var(--green)':'var(--red)')+'">'+(predictionTotal>=0&&predictionTotal>0?'+':'')+fmt(predictionTotal)+'</span></div>'
+    +'<div class="ss-breakdown-hd"><span>five modifier</span><span style="color:'+(fiveTotal>=0?'var(--green)':'var(--red)')+'">'+(fiveTotal>=0&&fiveTotal>0?'+':'')+fmt(fiveTotal)+'</span></div>'
+    +'</div>';
+  rows.forEach(row=>{
+    const win=row.r.total>=0;
+    html+='<div class="ss-matchup-row">'
+      +'<span class="ss-matchup-vs">hole '+(row.h+1)+' (par '+row.par+') — predicted '+row.predicted+', shot '+row.actual+(row.actual===5?' <span class="ff-five-badge">5</span>':'')+'</span>'
+      +'<span class="ss-matchup-amt" style="color:'+(win?'var(--green)':'var(--red)')+'">'+(win&&row.r.total>0?'+':'')+fmt(row.r.total)+'</span>'
+      +'</div>';
+  });
+  breakdown.innerHTML=html;
+}
+
+window.ffNewRound=function(){ showScreen('forecastfives-home'); };
+
+
+// ════════════════════════════════════════════════════════════════════════════
 // STABLE STAKES GAME
 // ════════════════════════════════════════════════════════════════════════════
 let SS = {
@@ -2423,7 +2635,7 @@ function inActiveGame(){
   const activeScreen=document.querySelector('.screen.active');
   if(!activeScreen) return false;
   const id=activeScreen.id;
-  return id==='lobby'||id==='scoring'||id==='ss-lobby'||id==='ss-scoring';
+  return id==='lobby'||id==='scoring'||id==='ss-lobby'||id==='ss-scoring'||id==='ff-scoring';
 }
 function pushBackGuard(){
   history.pushState({bbGuard:true}, '');
@@ -2459,6 +2671,78 @@ window.addEventListener('popstate', function(){
     <div id="ss-scorecard-content"></div>
     <button class="btn primary" style="margin-top:14px" onclick="document.getElementById('ss-scorecard-overlay').classList.remove('active')">← back to scoring</button>
   </div>
+</div>
+
+<!-- FORECASTFIVES HOME (setup) -->
+<div id="forecastfives-home" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="showScreen('main-home')">← back</button>
+    <div><div class="app-title" style="font-size:20px">⛳ Fore-cast Fives</div><div class="app-sub">Birdie Bucks · solo</div></div>
+    <button class="btn sm outline" onclick="showScreen('courses')">courses</button>
+  </div>
+  <div class="card">
+    <span class="field-label">your name</span>
+    <input class="inp" id="ff-name" placeholder="Enter your name">
+  </div>
+  <div class="card">
+    <span class="field-label">course</span>
+    <select class="inp" id="ff-course-select" onchange="ffOnCourseChange()"><option value="">-- select course --</option></select>
+    <span class="field-label">holes</span>
+    <div class="chip-row" id="ff-hole-chips">
+      <div class="chip on" onclick="ffSetHoles(9,this)">9 holes</div>
+      <div class="chip" onclick="ffSetHoles(18,this)">18 holes</div>
+    </div>
+    <span class="field-label">$ per stroke off prediction</span>
+    <div class="chip-row" id="ff-bet-chips">
+      <div class="chip" onclick="ffSetBet(0.25,this)">$0.25</div>
+      <div class="chip" onclick="ffSetBet(0.50,this)">$0.50</div>
+      <div class="chip" onclick="ffSetBet(0.75,this)">$0.75</div>
+      <div class="chip on" onclick="ffSetBet(1,this)">$1</div>
+      <div class="chip" onclick="ffSetBet(2,this)">$2</div>
+      <div class="chip" onclick="ffSetBet(5,this)">$5</div>
+    </div>
+    <span class="field-label">five modifier amount</span>
+    <div class="chip-row" id="ff-five-chips">
+      <div class="chip" onclick="ffSetFiveMod(1,this)">$1</div>
+      <div class="chip on" onclick="ffSetFiveMod(2,this)">$2</div>
+      <div class="chip" onclick="ffSetFiveMod(5,this)">$5</div>
+    </div>
+  </div>
+  <div class="card">
+    <div style="font-size:14px;color:var(--text2);font-weight:700;">HOW IT WORKS: predict your score before each hole. Beat or match it, you keep that money. Miss high, you owe it — $1 per stroke off. Score exactly a 5 on a par 3 or 4: extra penalty. Score exactly a 5 on a par 5: extra reward.</div>
+  </div>
+  <button class="btn primary" onclick="ffStartGame()">start round →</button>
+</div>
+
+<!-- FORECASTFIVES SCORING -->
+<div id="ff-scoring" class="screen">
+  <div class="top-bar">
+    <button class="btn sm" onclick="if(confirm('Leave this round? Progress will be lost.')) showScreen('forecastfives-home')">← leave</button>
+    <div id="ff-hole-num" style="font-size:18px;font-weight:900;color:var(--green)">Hole 1 of 9</div>
+    <div id="ff-hole-par" style="font-size:16px;font-weight:800;color:var(--blue)">Par 4</div>
+  </div>
+  <div class="card" style="text-align:center;padding:14px;">
+    <div style="font-size:14px;color:var(--text2);font-weight:700;">running total</div>
+    <div id="ff-running-total" style="font-size:36px;font-weight:900;">$0</div>
+  </div>
+  <div id="ff-hole-body"></div>
+  <div style="display:flex;gap:10px;margin-top:14px;">
+    <button class="btn outline" id="ff-prev-btn" onclick="ffPrevHole()" style="flex:1">← prev hole</button>
+    <button class="btn outline" id="ff-next-btn" onclick="ffNextHole()" style="flex:1">next hole →</button>
+  </div>
+  <button class="btn primary" style="margin-top:14px" onclick="ffFinishRound()">finish round</button>
+</div>
+
+<!-- FORECASTFIVES RESULTS -->
+<div id="ff-results" class="screen">
+  <div class="top-bar">
+    <div class="app-title" style="font-size:20px">⛳ round results</div>
+    <button class="btn sm primary" onclick="showScreen('main-home')">home</button>
+  </div>
+  <div id="ff-results-summary" style="margin-bottom:16px;"></div>
+  <div class="section-hd">hole by hole</div>
+  <div id="ff-results-breakdown"></div>
+  <button class="btn primary" style="margin-top:14px" onclick="ffNewRound()">play another round</button>
 </div>
 
 <!-- STABLESTAKES HOME -->
