@@ -151,7 +151,8 @@ select.inp{color:var(--text);}
 .ss-score-wrap.ss-eagle::after{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;border:2px solid var(--gold);border-radius:50%;}
 .ss-score-wrap.ss-bogey{border:2px solid var(--text3);border-radius:3px;}
 .ss-score-num{font-size:14px;font-weight:800;color:var(--text2);}
-.ss-score-num.ss-dbogey{color:var(--red);text-decoration:line-through;}
+.ss-score-num.ss-dbogey{color:var(--red);position:relative;display:inline-block;}
+.ss-score-num.ss-dbogey::after{content:'';position:absolute;left:-2px;right:-2px;top:50%;height:2px;background:var(--red);transform:translateY(-50%);}
 .ss-pts-line{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;white-space:nowrap;}
 .sc-tbl tr.result-row td{background:var(--bg3);border-top:3px solid var(--border2);}
 .sc-tbl tr.result-row td.name-cell{background:var(--bg3);}
@@ -2252,7 +2253,7 @@ function ssRenderScorecard(){
           +'</td>';
       }
     });
-    html+='<td><div class="ss-score-num">'+strokeTotal+'</div><div class="ss-pts-line">'+playerTotal+' pt'+(playerTotal===1?'':'s')+'</div></td>';
+    html+='<td><div class="ss-score-wrap"><span class="ss-score-num">'+strokeTotal+'</span></div><div class="ss-pts-line">'+playerTotal+' pt'+(playerTotal===1?'':'s')+'</div></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
