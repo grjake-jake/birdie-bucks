@@ -177,6 +177,9 @@ select.inp{color:var(--text);}
 .ff-result-neg{color:var(--red);}
 .ff-five-badge{display:inline-block;background:var(--gold);color:#000;font-weight:900;font-size:13px;padding:3px 10px;border-radius:20px;margin-left:8px;}
 .ff-hole-card{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+.ff-sc-tbl td{font-size:20px;}
+.ff-sc-tbl .ff-result-cell{font-size:24px;font-weight:900;}
+.ff-sc-tbl thead th{position:sticky;top:0;z-index:5;background:#1a5c1a;}
 .ss-breakdown-card{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
 .ss-breakdown-hd{font-size:17px;font-weight:900;color:var(--text);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
 .ss-breakdown-hd-amt{font-size:17px;font-weight:900;}
@@ -2096,7 +2099,7 @@ window.ffShowScorecard=function(){ ffRenderScorecard(); document.getElementById(
 
 function ffRenderScorecard(){
   const container=document.getElementById('ff-scorecard-content');
-  let html='<table class="sc-tbl" style="width:100%;"><thead><tr>'
+  let html='<table class="sc-tbl ff-sc-tbl" style="width:100%;"><thead><tr>'
     +'<th>HOLE</th><th>PAR</th><th>PREDICTED</th><th>ACTUAL</th><th>RESULT</th>'
     +'</tr></thead><tbody>';
   let runningTotal=0;
@@ -2114,24 +2117,19 @@ function ffRenderScorecard(){
     const posResult=r.total>=0;
     const fiveTag=FF.scores[h]===5?' <span class="ff-five-badge">5</span>':'';
     const actual=Number(FF.scores[h]);
-    const diff=actual-par;
-    let wrapCls='';
-    if(actual===1||diff<=-2) wrapCls='ss-eagle';
-    else if(diff===-1) wrapCls='ss-birdie';
-    else if(diff===1) wrapCls='ss-bogey';
-    const actualDisplay='<span class="ss-score-wrap '+wrapCls+'" style="width:28px;height:28px;"><span class="ss-score-num" style="font-size:16px;color:var(--text);">'+actual+'</span></span>'+fiveTag;
+    const resultStr=posResult ? ((r.total>0?'+':'')+fmt(r.total)) : ('-'+fmt(Math.abs(r.total)));
     html+='<tr class="'+rowCls+'">'
       +'<td>'+(h+1)+'</td>'
       +'<td>'+par+'</td>'
       +'<td>'+FF.predictions[h]+'</td>'
-      +'<td>'+actualDisplay+'</td>'
-      +'<td class="result-cell" style="color:'+(posResult?'var(--green)':'var(--red)')+'">'+(posResult&&r.total>0?'+':'')+fmt(r.total)+'</td>'
+      +'<td>'+actual+fiveTag+'</td>'
+      +'<td class="ff-result-cell" style="color:'+(posResult?'var(--green)':'var(--red)')+'">'+resultStr+'</td>'
       +'</tr>';
   }
   html+='</tbody></table>'
     +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-top:3px solid var(--border);margin-top:6px;">'
     +'<span style="font-size:18px;font-weight:900;">SCORECARD TOTAL</span>'
-    +'<span style="font-size:26px;font-weight:900;color:'+(runningTotal>=0?'var(--green)':'var(--red)')+'">'+(runningTotal>=0&&runningTotal>0?'+':'')+fmt(runningTotal)+'</span>'
+    +'<span style="font-size:26px;font-weight:900;color:'+(runningTotal>=0?'var(--green)':'var(--red)')+'">'+(runningTotal>=0?((runningTotal>0?'+':'')+fmt(runningTotal)):('-'+fmt(Math.abs(runningTotal))))+'</span>'
     +'</div>';
   container.innerHTML=html;
 }
