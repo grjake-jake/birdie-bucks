@@ -1986,22 +1986,22 @@ function ffRenderHole(){
     const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
     const posPred=r.predictionAmt>=0;
     let html='<div class="ff-hole-card">'
-      +'<div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;margin-bottom:6px;">'
-      +'<span>predicted '+FF.predictions[h]+' · shot '+FF.scores[h]+'</span>'
+      +'<div style="display:flex;justify-content:space-between;font-size:21px;font-weight:900;margin-bottom:6px;">'
+      +'<span>PREDICTED '+FF.predictions[h]+' · SHOT '+FF.scores[h]+'</span>'
       +'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border2);">'
-      +'<span style="font-size:15px;color:var(--text2);font-weight:700;">prediction result</span>'
+      +'<span style="font-size:15px;color:var(--text2);font-weight:700;">PREDICTION RESULT</span>'
       +'<span style="font-size:18px;font-weight:900;" class="'+(posPred?'ff-result-pos':'ff-result-neg')+'">'+(posPred&&r.predictionAmt>0?'+':'')+fmt(r.predictionAmt)+'</span>'
       +'</div>';
     if(r.fiveAmt!==0){
       const posFive=r.fiveAmt>0;
       html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--border2);">'
-        +'<span style="font-size:15px;color:var(--text2);font-weight:700;">five modifier<span class="ff-five-badge">5</span></span>'
+        +'<span style="font-size:15px;color:var(--text2);font-weight:700;">FIVE MODIFIER<span class="ff-five-badge">5</span></span>'
         +'<span style="font-size:18px;font-weight:900;" class="'+(posFive?'ff-result-pos':'ff-result-neg')+'">'+(posFive?'+':'')+fmt(r.fiveAmt)+'</span>'
         +'</div>';
     }
     html+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:2px solid var(--border);margin-top:4px;">'
-      +'<span style="font-size:16px;font-weight:900;">hole total</span>'
+      +'<span style="font-size:16px;font-weight:900;">HOLE TOTAL</span>'
       +'<span style="font-size:22px;font-weight:900;" class="'+(r.total>=0?'ff-result-pos':'ff-result-neg')+'">'+(r.total>=0&&r.total>0?'+':'')+fmt(r.total)+'</span>'
       +'</div>'
       +'</div>'
@@ -2022,6 +2022,43 @@ window.ffFinishRound=async function(){
     await set(ref(db,'completed_games/'+id), {...gameData, completedAt: Date.now()});
   }catch(e){ console.error('FF save failed',e); }
 };
+
+window.ffShowScorecard=function(){ ffRenderScorecard(); document.getElementById('ff-scorecard-overlay').classList.add('active'); };
+
+function ffRenderScorecard(){
+  const container=document.getElementById('ff-scorecard-content');
+  let html='<table class="sc-tbl" style="width:100%;"><thead><tr>'
+    +'<th>HOLE</th><th>PAR</th><th>PREDICTED</th><th>ACTUAL</th><th>RESULT</th>'
+    +'</tr></thead><tbody>';
+  let runningTotal=0;
+  for(let h=0;h<FF.holes;h++){
+    const par=FF.pars[h]||4;
+    const hasPred=FF.predictions[h]!==''&&FF.predictions[h]!==undefined;
+    const hasScore=FF.scores[h]!==''&&FF.scores[h]!==undefined;
+    const rowCls=h%2===0?'col-a':'col-b';
+    if(!hasPred||!hasScore){
+      html+='<tr class="'+rowCls+'"><td>'+(h+1)+'</td><td>'+par+'</td><td colspan="3" style="color:var(--text3);">not yet played</td></tr>';
+      continue;
+    }
+    const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
+    runningTotal+=r.total;
+    const posResult=r.total>=0;
+    const fiveTag=FF.scores[h]===5?' <span class="ff-five-badge">5</span>':'';
+    html+='<tr class="'+rowCls+'">'
+      +'<td>'+(h+1)+'</td>'
+      +'<td>'+par+'</td>'
+      +'<td>'+FF.predictions[h]+'</td>'
+      +'<td>'+FF.scores[h]+fiveTag+'</td>'
+      +'<td class="result-cell" style="color:'+(posResult?'var(--green)':'var(--red)')+'">'+(posResult&&r.total>0?'+':'')+fmt(r.total)+'</td>'
+      +'</tr>';
+  }
+  html+='</tbody></table>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 4px;border-top:3px solid var(--border);margin-top:6px;">'
+    +'<span style="font-size:18px;font-weight:900;">SCORECARD TOTAL</span>'
+    +'<span style="font-size:26px;font-weight:900;color:'+(runningTotal>=0?'var(--green)':'var(--red)')+'">'+(runningTotal>=0&&runningTotal>0?'+':'')+fmt(runningTotal)+'</span>'
+    +'</div>';
+  container.innerHTML=html;
+}
 
 function ffBuildResults(){
   let predictionTotal=0, fiveTotal=0, grandTotal=0, holesPlayed=0, exactHits=0;
@@ -2620,7 +2657,7 @@ checkRejoinSession();
 // Prevents the phone's back button from leaving the app entirely while a game
 // is in progress. Closes any open overlay first; if no overlay is open and a
 // game is active, asks for confirmation before allowing the user to leave.
-const ALL_OVERLAY_IDS=['scorecard-overlay','past-game-overlay','add-player-overlay','rules-overlay','hole-picker-overlay','ss-hole-picker-overlay','ss-scorecard-overlay'];
+const ALL_OVERLAY_IDS=['scorecard-overlay','past-game-overlay','add-player-overlay','rules-overlay','hole-picker-overlay','ss-hole-picker-overlay','ss-scorecard-overlay','ff-scorecard-overlay'];
 function anyOverlayOpen(){
   return ALL_OVERLAY_IDS.find(id=>{
     const el=document.getElementById(id);
@@ -2673,6 +2710,15 @@ window.addEventListener('popstate', function(){
   </div>
 </div>
 
+<!-- FORECASTFIVES SCORECARD OVERLAY -->
+<div class="overlay" id="ff-scorecard-overlay">
+  <div class="scorecard-modal">
+    <div class="sc-title"><span>⛳ fore-cast fives scorecard</span><span class="sc-close" onclick="document.getElementById('ff-scorecard-overlay').classList.remove('active')">✕</span></div>
+    <div id="ff-scorecard-content"></div>
+    <button class="btn primary" style="margin-top:14px" onclick="document.getElementById('ff-scorecard-overlay').classList.remove('active')">← back to scoring</button>
+  </div>
+</div>
+
 <!-- FORECASTFIVES HOME (setup) -->
 <div id="forecastfives-home" class="screen">
   <div class="top-bar">
@@ -2718,12 +2764,13 @@ window.addEventListener('popstate', function(){
 <div id="ff-scoring" class="screen">
   <div class="top-bar">
     <button class="btn sm" onclick="if(confirm('Leave this round? Progress will be lost.')) showScreen('forecastfives-home')">← leave</button>
-    <div id="ff-hole-num" style="font-size:18px;font-weight:900;color:var(--green)">Hole 1 of 9</div>
+    <div id="ff-hole-num" style="font-size:28px;font-weight:900;color:var(--green);line-height:1.1;">Hole 1 of 9</div>
     <div id="ff-hole-par" style="font-size:16px;font-weight:800;color:var(--blue)">Par 4</div>
   </div>
   <div class="card" style="text-align:center;padding:14px;">
-    <div style="font-size:14px;color:var(--text2);font-weight:700;">running total</div>
+    <div style="font-size:14px;color:var(--text2);font-weight:700;">RUNNING TOTAL</div>
     <div id="ff-running-total" style="font-size:36px;font-weight:900;">$0</div>
+    <button class="btn sm outline" style="margin-top:8px" onclick="ffShowScorecard()">📋 view scorecard</button>
   </div>
   <div id="ff-hole-body"></div>
   <div style="display:flex;gap:10px;margin-top:14px;">
