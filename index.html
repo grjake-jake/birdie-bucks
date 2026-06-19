@@ -2366,12 +2366,30 @@ function ssBuildResults(screenId,netId,payId,breakId){
     if(Math.abs(neg2[ni].v)<0.005)ni++;
   }
   const pd=document.getElementById(payId); pd.innerHTML='';
-  if(!debts.length) pd.innerHTML='<div class="card" style="text-align:center;color:var(--green);font-size:22px;font-weight:900">all square! 🤝</div>';
-  else debts.forEach(d=>{
-    const div=document.createElement('div'); div.className='owes-row';
-    div.innerHTML='<span style="color:var(--red);font-size:20px;font-weight:900">'+escH(dp[d.from])+' owes '+escH(dp[d.to])+'</span>'+'<span style="font-size:30px;font-weight:900;color:var(--red)">'+fmt(d.amt)+'</span>';
-    pd.appendChild(div);
-  });
+  if(!debts.length){
+    pd.innerHTML='<div class="card" style="text-align:center;color:var(--green);font-size:22px;font-weight:900">all square! 🤝</div>';
+  } else {
+    // Group by collector so each creditor gets their own block
+    const collectors=[...new Set(debts.map(d=>d.to))];
+    collectors.forEach(ci=>{
+      const myDebts=debts.filter(d=>d.to===ci);
+      const total=myDebts.reduce((s,d)=>s+d.amt,0);
+      const block=document.createElement('div');
+      block.style.cssText='background:var(--green-light);border:3px solid var(--green);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;';
+      let html='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+        +'<span style="font-size:20px;font-weight:900;color:var(--green)">'+escH(dp[ci])+' collects</span>'
+        +'<span style="font-size:26px;font-weight:900;color:var(--green)">+'+fmt(total)+'</span>'
+        +'</div>';
+      myDebts.forEach(d=>{
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--border2);">'
+          +'<span style="font-size:16px;font-weight:800;color:var(--red)">'+escH(dp[d.from])+' pays</span>'
+          +'<span style="font-size:18px;font-weight:900;color:var(--red)">'+fmt(d.amt)+'</span>'
+          +'</div>';
+      });
+      block.innerHTML=html;
+      pd.appendChild(block);
+    });
+  }
 }
 
 // Hook showScreen to refresh SS home when navigating there
