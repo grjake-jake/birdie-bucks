@@ -891,10 +891,25 @@ window.showPastGames = async function(){
     row.className = 'past-game-row';
     row.onclick = function(){ loadPastGame(id); };
     const courseLine = g.courseName ? g.courseName+' · ' : '';
+    let nameLine, betLine, modeTag;
+    if(g.gameType==='forecastfives'){
+      nameLine = escH(g.name||'(unnamed)');
+      betLine = courseLine+(g.holes||9)+' holes · $'+(g.betPerStroke||1)+'/stroke';
+      modeTag = '⛳ Fore-cast Fives';
+    } else if(g.gameType==='stablestakes'){
+      nameLine = (g.players||[]).map(escH).join(', ');
+      betLine = courseLine+(g.holes||9)+' holes · $'+(g.bet||1)+'/point';
+      modeTag = '📊 Stableford Stakes';
+    } else {
+      nameLine = (g.players||[]).map(escH).join(', ');
+      betLine = courseLine+(g.holes||9)+' holes · $'+(g.bet||1)+'/hole';
+      modeTag = '💰 Buck Skins';
+    }
     row.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
       +'<div style="flex:1;">'
-      +'<div style="font-size:18px;font-weight:800">'+(g.players||[]).join(', ')+'</div>'
-      +'<div style="font-size:15px;color:var(--green);font-weight:700">'+courseLine+(g.holes||9)+' holes · $'+(g.bet||1)+'/hole</div>'
+      +'<div style="font-size:12px;color:var(--text3);font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">'+modeTag+'</div>'
+      +'<div style="font-size:18px;font-weight:800">'+nameLine+'</div>'
+      +'<div style="font-size:15px;color:var(--green);font-weight:700">'+betLine+'</div>'
       +'<div style="font-size:14px;color:var(--text2);font-weight:700">📅 '+date+' at '+time+'</div>'
       +'</div>'
       +'<button onclick="deletePastGame(\''+id+'\',event)" style="margin-left:12px;padding:10px 14px;font-size:18px;font-weight:900;background:#ffe8e8;border:2px solid #b30000;border-radius:10px;color:#b30000;cursor:pointer;white-space:nowrap;flex-shrink:0;">🗑 delete</button>'
@@ -913,7 +928,31 @@ window.loadPastGame = async function(id){
   const snap = await get(ref(db,'completed_games/'+id));
   if(!snap.val()) return;
   const g = snap.val();
-  // Load game data into G for rendering
+
+  if(g.gameType==='forecastfives'){
+    const saved = {...FF};
+    FF.name=g.name||''; FF.holes=g.holes||9; FF.pars=g.pars||[];
+    FF.betPerStroke=g.betPerStroke||1; FF.fiveModifier=g.fiveModifier||2;
+    FF.predictions=g.predictions||[]; FF.scores=g.scores||[]; FF.currentHole=0;
+    ffRenderScorecard();
+    Object.assign(FF, saved);
+    document.getElementById('past-game-overlay').classList.remove('active');
+    document.getElementById('ff-scorecard-overlay').classList.add('active');
+    return;
+  }
+
+  if(g.gameType==='stablestakes'){
+    const saved = {...SS};
+    SS.players=g.players||[]; SS.holes=g.holes||9; SS.pars=g.pars||[];
+    SS.bet=g.bet||1; SS.scores=g.scores||[]; SS.editedCells=g.editedCells||{};
+    ssRenderScorecard();
+    Object.assign(SS, saved);
+    document.getElementById('past-game-overlay').classList.remove('active');
+    document.getElementById('ss-scorecard-overlay').classList.add('active');
+    return;
+  }
+
+  // Buck Skins (no gameType, or gameType==='buckskins')
   const saved = {...G};
   G.players=g.players||[]; G.holes=g.holes||9; G.pars=g.pars||[]; G.bet=g.bet||1; G.hon=g.hon||0;
   G.carryovers=g.carryovers!==undefined?g.carryovers:true;
@@ -922,12 +961,12 @@ window.loadPastGame = async function(id){
   G.scores=g.scores||[]; G.editedCells=g.editedCells||{};
   G._pastGameMeta={courseName:g.courseName||'',completedAt:g.completedAt};
   renderScorecard();
-  // Restore G
   Object.assign(G, saved);
   G._pastGameMeta=null;
   document.getElementById('past-game-overlay').classList.remove('active');
   document.getElementById('scorecard-overlay').classList.add('active');
 };
+
 
 // ── SCREEN ───────────────────────────────────────────────────────────────────
 window.showScreen = function(id){
@@ -1796,7 +1835,7 @@ window.endGame=async function(){
   const gameData={ players:G.players, holes:G.holes, pars:G.pars, bet:G.bet, hon:G.hon,
     carryovers:G.carryovers, birdieDoubles:G.birdieDoubles, back9doubles:G.back9doubles,
     escalating:G.escalating, escBet:G.escBet,
-    scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName };
+    scores:G.scores, editedCells:G.editedCells||{}, courseName:courseName, gameType:'buckskins' };
   await saveCompletedGame(gameData);
   clearSession();
   buildResults('final-results','final-net-grid','final-payouts');
