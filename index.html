@@ -172,7 +172,7 @@ select.inp{color:var(--text);}
 .tog-btn.on{background:var(--green);color:#fff;border-color:var(--green);}
 .owes-row{background:#ffe8e8;border:4px solid #b30000;border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
 .ff-predict-box{background:var(--bg2);border:2px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
-.ff-locked-msg{background:#fff8e1;border:2px solid var(--gold);border-radius:var(--radius);padding:12px 16px;font-size:15px;font-weight:800;color:#8a6d00;text-align:center;margin-bottom:12px;}
+.ff-locked-msg{background:#fff8e1;border:2px solid var(--gold);border-radius:var(--radius);padding:12px 16px;font-size:15px;font-weight:800;color:#000000;text-align:center;margin-bottom:12px;}
 .ff-result-pos{color:var(--green);}
 .ff-result-neg{color:var(--red);}
 .ff-five-badge{display:inline-block;background:var(--gold);color:#000;font-weight:900;font-size:13px;padding:3px 10px;border-radius:20px;margin-left:8px;}
@@ -200,6 +200,11 @@ select.inp{color:var(--text);}
 @keyframes birdie-pulse{
   0%,100%{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(122,82,0,0.3);}
   50%{box-shadow:0 0 0 5px var(--gold),0 0 0 10px rgba(122,82,0,0.15);}
+}
+.ff-needs-input{animation:ff-attn-pulse 1.2s ease-in-out infinite;}
+@keyframes ff-attn-pulse{
+  0%,100%{box-shadow:0 0 0 3px var(--green),0 0 0 6px rgba(26,92,26,0.25);}
+  50%{box-shadow:0 0 0 6px var(--green),0 0 0 12px rgba(26,92,26,0.12);}
 }
 </style>
 </head>
@@ -1972,15 +1977,15 @@ function ffRenderHole(){
   if(!hasPrediction){
     body.innerHTML='<div class="ff-predict-box">'
       +'<span class="field-label">your prediction for this hole</span>'
-      +'<input class="inp" id="ff-predict-input" type="number" inputmode="numeric" placeholder="e.g. 5" style="font-size:32px;text-align:center;font-weight:900;">'
-      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitPrediction()">lock in prediction →</button>'
+      +'<input class="inp ff-needs-input" id="ff-predict-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitPrediction()">LOCK IN PREDICTION →</button>'
       +'</div>';
   } else if(!hasScore){
     body.innerHTML='<div class="ff-locked-msg">prediction locked: '+FF.predictions[h]+'</div>'
       +'<div class="ff-predict-box">'
       +'<span class="field-label">your actual score</span>'
-      +'<input class="inp" id="ff-actual-input" type="number" inputmode="numeric" placeholder="strokes" style="font-size:32px;text-align:center;font-weight:900;">'
-      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitScore()">submit score →</button>'
+      +'<input class="inp ff-needs-input" id="ff-actual-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitScore()">SUBMIT SCORE →</button>'
       +'</div>';
   } else {
     const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
@@ -2005,7 +2010,7 @@ function ffRenderHole(){
       +'<span style="font-size:22px;font-weight:900;" class="'+(r.total>=0?'ff-result-pos':'ff-result-neg')+'">'+(r.total>=0&&r.total>0?'+':'')+fmt(r.total)+'</span>'
       +'</div>'
       +'</div>'
-      +'<button class="btn outline" onclick="ffEditPrediction()">redo this hole</button>';
+      +'<button class="btn outline" onclick="ffEditPrediction()">REDO THIS HOLE</button>';
     body.innerHTML=html;
   }
 }
@@ -2757,7 +2762,7 @@ window.addEventListener('popstate', function(){
   <div class="card">
     <div style="font-size:14px;color:var(--text2);font-weight:700;">HOW IT WORKS: predict your score before each hole. Beat or match it, you keep that money. Miss high, you owe it — $1 per stroke off. Score exactly a 5 on a par 3 or 4: extra penalty. Score exactly a 5 on a par 5: extra reward.</div>
   </div>
-  <button class="btn primary" onclick="ffStartGame()">start round →</button>
+  <button class="btn primary" onclick="ffStartGame()">START ROUND →</button>
 </div>
 
 <!-- FORECASTFIVES SCORING -->
@@ -2765,19 +2770,19 @@ window.addEventListener('popstate', function(){
   <div class="top-bar">
     <button class="btn sm" onclick="if(confirm('Leave this round? Progress will be lost.')) showScreen('forecastfives-home')">← leave</button>
     <div id="ff-hole-num" style="font-size:28px;font-weight:900;color:var(--green);line-height:1.1;">Hole 1 of 9</div>
-    <div id="ff-hole-par" style="font-size:16px;font-weight:800;color:var(--blue)">Par 4</div>
+    <div id="ff-hole-par" style="font-size:28px;font-weight:800;color:var(--blue);line-height:1.1;">Par 4</div>
   </div>
   <div class="card" style="text-align:center;padding:14px;">
     <div style="font-size:14px;color:var(--text2);font-weight:700;">RUNNING TOTAL</div>
     <div id="ff-running-total" style="font-size:36px;font-weight:900;">$0</div>
-    <button class="btn sm outline" style="margin-top:8px" onclick="ffShowScorecard()">📋 view scorecard</button>
+    <button class="btn sm outline" style="margin-top:8px" onclick="ffShowScorecard()">📋 VIEW SCORECARD</button>
   </div>
   <div id="ff-hole-body"></div>
   <div style="display:flex;gap:10px;margin-top:14px;">
     <button class="btn outline" id="ff-prev-btn" onclick="ffPrevHole()" style="flex:1">← prev hole</button>
     <button class="btn outline" id="ff-next-btn" onclick="ffNextHole()" style="flex:1">next hole →</button>
   </div>
-  <button class="btn primary" style="margin-top:14px" onclick="ffFinishRound()">finish round</button>
+  <button class="btn primary" style="margin-top:14px" onclick="ffFinishRound()">FINISH ROUND</button>
 </div>
 
 <!-- FORECASTFIVES RESULTS -->
@@ -2789,7 +2794,7 @@ window.addEventListener('popstate', function(){
   <div id="ff-results-summary" style="margin-bottom:16px;"></div>
   <div class="section-hd">hole by hole</div>
   <div id="ff-results-breakdown"></div>
-  <button class="btn primary" style="margin-top:14px" onclick="ffNewRound()">play another round</button>
+  <button class="btn primary" style="margin-top:14px" onclick="ffNewRound()">PLAY ANOTHER ROUND</button>
 </div>
 
 <!-- STABLESTAKES HOME -->
