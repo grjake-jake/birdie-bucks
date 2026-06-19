@@ -136,6 +136,7 @@ select.inp{color:var(--text);}
 .sc-tbl td.par-cell{font-size:16px;color:var(--blue);font-weight:800;background:var(--blue-light);}
 .sc-tbl tr.ss-row-a td{background:var(--col-a);}
 .sc-tbl tr.ss-row-b td{background:var(--col-b);}
+.sc-tbl tr.ss-row-a td,.sc-tbl tr.ss-row-b td{border-top:4px solid #000000;}
 .sc-tbl tr.ss-row-a td.name-cell{background:var(--col-a);}
 .sc-tbl tr.ss-row-b td.name-cell{background:var(--col-b);}
 .sc-tbl td.result-cell{font-size:16px;font-weight:900;}
@@ -2213,7 +2214,7 @@ function ssRenderScorecard(){
   if(!played.length){ document.getElementById('ss-scorecard-content').innerHTML='<div style="color:var(--text2);text-align:center;padding:20px;font-size:20px;font-weight:700">no holes played yet</div>'; return; }
   let html='<div class="sc-wrap"><table class="sc-tbl"><thead><tr><th class="name-col">name</th>';
   played.forEach((h,ci)=>{ html+='<th class="'+(ci%2===0?'col-a':'col-b')+'">H'+(h+1)+'</th>'; });
-  html+='<th style="background:var(--green);color:#fff">pts</th></tr></thead><tbody>';
+  html+='<th style="background:var(--green);color:#fff">total</th></tr></thead><tbody>';
   // Par row
   html+='<tr><td class="name-cell" style="font-size:15px;font-weight:800;color:var(--blue)">PAR</td>';
   played.forEach((h,ci)=>{ html+='<td class="par-cell">'+(SS.pars[h]||4)+'</td>'; });
@@ -2223,6 +2224,7 @@ function ssRenderScorecard(){
     const rowCls=pi%2===0?'ss-row-a':'ss-row-b';
     html+='<tr class="'+rowCls+'"><td class="name-cell">'+escH(p)+'</td>';
     let playerTotal=0;
+    let strokeTotal=0;
     played.forEach((h,ci)=>{
       const sc=Number(SS.scores[h][pi]);
       const par=SS.pars[h]||4;
@@ -2230,6 +2232,7 @@ function ssRenderScorecard(){
       const diff=sc-par;
       const isEdited=SS.editedCells&&SS.editedCells[h+'_'+pi];
       playerTotal+=pts;
+      strokeTotal+=sc;
       totals[pi]+=pts;
 
       if(sc!==1 && diff>2){
@@ -2249,7 +2252,7 @@ function ssRenderScorecard(){
           +'</td>';
       }
     });
-    html+='<td style="font-size:18px;font-weight:900;color:var(--green)">'+playerTotal+'</td>';
+    html+='<td><div class="ss-score-num">'+strokeTotal+'</div><div class="ss-pts-line">'+playerTotal+' pt'+(playerTotal===1?'':'s')+'</div></td>';
     html+='</tr>';
   });
   html+='</tbody></table></div>';
