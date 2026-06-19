@@ -201,11 +201,23 @@ select.inp{color:var(--text);}
   0%,100%{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(122,82,0,0.3);}
   50%{box-shadow:0 0 0 5px var(--gold),0 0 0 10px rgba(122,82,0,0.15);}
 }
-.ff-needs-input{animation:ff-attn-pulse 1.2s ease-in-out infinite;}
-@keyframes ff-attn-pulse{
-  0%,100%{box-shadow:0 0 0 3px var(--green),0 0 0 6px rgba(26,92,26,0.25);}
-  50%{box-shadow:0 0 0 6px var(--green),0 0 0 12px rgba(26,92,26,0.12);}
+.ff-needs-input-red{animation:ff-attn-pulse-red 1.2s ease-in-out infinite;}
+@keyframes ff-attn-pulse-red{
+  0%,100%{box-shadow:0 0 0 3px var(--red),0 0 0 6px rgba(179,0,0,0.25);}
+  50%{box-shadow:0 0 0 6px var(--red),0 0 0 12px rgba(179,0,0,0.12);}
 }
+.ff-needs-input-blue{animation:ff-attn-pulse-blue 1.2s ease-in-out infinite;}
+@keyframes ff-attn-pulse-blue{
+  0%,100%{box-shadow:0 0 0 3px var(--blue),0 0 0 6px rgba(10,45,107,0.25);}
+  50%{box-shadow:0 0 0 6px var(--blue),0 0 0 12px rgba(10,45,107,0.12);}
+}
+.ff-btn-flash{background:var(--red)!important;animation:ff-btn-flash-anim 1.1s ease-in-out infinite;}
+@keyframes ff-btn-flash-anim{
+  0%,100%{opacity:1;}
+  50%{opacity:0.55;}
+}
+.ff-btn-done{background:var(--green)!important;animation:none!important;opacity:1!important;}
+.ff-advance-msg{text-align:center;font-size:15px;font-weight:700;color:var(--text2);margin-top:10px;}
 </style>
 </head>
 <body>
@@ -1869,6 +1881,7 @@ let FF = {
   holes:9, betPerStroke:1, fiveModifier:2, name:'', pars:[],
   predictions:[], scores:[], currentHole:0
 };
+let ffAutoAdvanceTimer=null;
 
 // Fore-cast Fives scoring: prediction layer + five modifier, returns {predictionAmt, fiveAmt, total}
 function ffHoleResult(predicted, actual, par, betPerStroke, fiveModifier){
@@ -1928,7 +1941,9 @@ window.ffSubmitPrediction=function(){
   const v=inp.value;
   if(v===''||isNaN(Number(v))||Number(v)<1){ alert('Enter a valid predicted score'); return; }
   FF.predictions[h]=Number(v);
-  ffRenderHole();
+  const btn=document.getElementById('ff-lock-btn');
+  if(btn){ btn.classList.remove('ff-btn-flash'); btn.classList.add('ff-btn-done'); btn.disabled=true; }
+  setTimeout(ffRenderHole, 400);
 };
 
 window.ffSubmitScore=function(){
@@ -1937,7 +1952,9 @@ window.ffSubmitScore=function(){
   const v=inp.value;
   if(v===''||isNaN(Number(v))||Number(v)<1){ alert('Enter a valid actual score'); return; }
   FF.scores[h]=Number(v);
-  ffRenderHole();
+  const btn=document.getElementById('ff-submit-btn');
+  if(btn){ btn.classList.remove('ff-btn-flash'); btn.classList.add('ff-btn-done'); btn.disabled=true; }
+  setTimeout(ffRenderHole, 400);
 };
 
 window.ffEditPrediction=function(){
@@ -1960,6 +1977,7 @@ function ffRunningTotal(){
 }
 
 function ffRenderHole(){
+  if(ffAutoAdvanceTimer){ clearTimeout(ffAutoAdvanceTimer); ffAutoAdvanceTimer=null; }
   const h=FF.currentHole;
   const par=FF.pars[h]||4;
   document.getElementById('ff-hole-num').textContent='Hole '+(h+1)+' of '+FF.holes;
@@ -1977,15 +1995,15 @@ function ffRenderHole(){
   if(!hasPrediction){
     body.innerHTML='<div class="ff-predict-box">'
       +'<span class="field-label">your prediction for this hole</span>'
-      +'<input class="inp ff-needs-input" id="ff-predict-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
-      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitPrediction()">LOCK IN PREDICTION →</button>'
+      +'<input class="inp ff-needs-input-red" id="ff-predict-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input-red\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary ff-btn-flash" id="ff-lock-btn" style="margin-top:10px" onclick="ffSubmitPrediction()">LOCK IN PREDICTION →</button>'
       +'</div>';
   } else if(!hasScore){
     body.innerHTML='<div class="ff-locked-msg">prediction locked: '+FF.predictions[h]+'</div>'
       +'<div class="ff-predict-box">'
       +'<span class="field-label">your actual score</span>'
-      +'<input class="inp ff-needs-input" id="ff-actual-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
-      +'<button class="btn primary" style="margin-top:10px" onclick="ffSubmitScore()">SUBMIT SCORE →</button>'
+      +'<input class="inp ff-needs-input-blue" id="ff-actual-input" type="number" inputmode="numeric" oninput="this.classList.toggle(\'ff-needs-input-blue\', this.value===\'\')" style="font-size:32px;text-align:center;font-weight:900;">'
+      +'<button class="btn primary ff-btn-flash" id="ff-submit-btn" style="margin-top:10px" onclick="ffSubmitScore()">SUBMIT SCORE →</button>'
       +'</div>';
   } else {
     const r=ffHoleResult(FF.predictions[h],FF.scores[h],par,FF.betPerStroke,FF.fiveModifier);
@@ -2011,7 +2029,14 @@ function ffRenderHole(){
       +'</div>'
       +'</div>'
       +'<button class="btn outline" onclick="ffEditPrediction()">REDO THIS HOLE</button>';
+    const isLastHole = h===FF.holes-1;
+    if(!isLastHole){
+      html+='<div class="ff-advance-msg">moving to next hole…</div>';
+    }
     body.innerHTML=html;
+    if(!isLastHole){
+      ffAutoAdvanceTimer=setTimeout(()=>{ ffAutoAdvanceTimer=null; ffNextHole(); }, 5000);
+    }
   }
 }
 
@@ -2049,11 +2074,18 @@ function ffRenderScorecard(){
     runningTotal+=r.total;
     const posResult=r.total>=0;
     const fiveTag=FF.scores[h]===5?' <span class="ff-five-badge">5</span>':'';
+    const actual=Number(FF.scores[h]);
+    const diff=actual-par;
+    let wrapCls='';
+    if(actual===1||diff<=-2) wrapCls='ss-eagle';
+    else if(diff===-1) wrapCls='ss-birdie';
+    else if(diff===1) wrapCls='ss-bogey';
+    const actualDisplay='<span class="ss-score-wrap '+wrapCls+'" style="width:28px;height:28px;"><span class="ss-score-num" style="font-size:16px;color:var(--text);">'+actual+'</span></span>'+fiveTag;
     html+='<tr class="'+rowCls+'">'
       +'<td>'+(h+1)+'</td>'
       +'<td>'+par+'</td>'
       +'<td>'+FF.predictions[h]+'</td>'
-      +'<td>'+FF.scores[h]+fiveTag+'</td>'
+      +'<td>'+actualDisplay+'</td>'
       +'<td class="result-cell" style="color:'+(posResult?'var(--green)':'var(--red)')+'">'+(posResult&&r.total>0?'+':'')+fmt(r.total)+'</td>'
       +'</tr>';
   }
@@ -2769,8 +2801,10 @@ window.addEventListener('popstate', function(){
 <div id="ff-scoring" class="screen">
   <div class="top-bar">
     <button class="btn sm" onclick="if(confirm('Leave this round? Progress will be lost.')) showScreen('forecastfives-home')">← leave</button>
-    <div id="ff-hole-num" style="font-size:28px;font-weight:900;color:var(--green);line-height:1.1;">Hole 1 of 9</div>
-    <div id="ff-hole-par" style="font-size:28px;font-weight:800;color:var(--blue);line-height:1.1;">Par 4</div>
+  </div>
+  <div style="text-align:center;background:var(--bg2);border:3px solid var(--green);border-radius:var(--radius);padding:14px 10px;margin-bottom:14px;">
+    <div id="ff-hole-num" style="font-size:40px;font-weight:900;color:var(--green);line-height:1.1;">Hole 1 of 9</div>
+    <div id="ff-hole-par" style="font-size:32px;font-weight:900;color:var(--blue);line-height:1.2;">Par 4</div>
   </div>
   <div class="card" style="text-align:center;padding:14px;">
     <div style="font-size:14px;color:var(--text2);font-weight:700;">RUNNING TOTAL</div>
